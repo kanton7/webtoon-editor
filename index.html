@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>웹툰 컷 배치 에디터</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#eef0f5; --panel:#ffffff; --line:#e3e5ee; --accent:#5b6cff; --accent-2:#7c5cff;
+    --text:#232533; --muted:#8b8ea3; --soft:#f4f5fa; --handle:#c3c3d6; --handle-hover:#5b6cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,'Malgun Gothic',sans-serif;
+    background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ===== 상단 바 ===== */
+  header{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(30,32,60,.04);
+    padding:9px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;position:relative;z-index:20}
+  .brand{display:flex;align-items:center;gap:8px;margin-right:4px}
+  .brand .logo{font-size:18px;filter:saturate(1.1)}
+  .brand-txt{font-size:14px;font-weight:800;letter-spacing:-.2px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header .spacer{flex:1}
+  .tdiv{width:1px;height:22px;background:var(--line)}
+  .tgroup{display:flex;align-items:center;gap:6px}
+
+  button{font-family:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;
+    color:var(--text);padding:7px 12px;border-radius:9px;cursor:pointer;transition:.14s;white-space:nowrap;line-height:1}
+  button:hover{border-color:var(--accent);color:var(--accent);background:var(--soft)}
+  button:active{transform:translateY(1px)}
+  button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;
+    padding:8px 14px;box-shadow:0 2px 8px rgba(91,108,255,.35);display:inline-flex;align-items:center;gap:6px}
+  button.primary:hover{filter:brightness(1.06);color:#fff}
+  button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  button.ghost:hover{background:var(--soft);color:var(--accent);border-color:transparent}
+  button.icon{padding:7px 10px;font-size:15px;line-height:1}
+  button:disabled{opacity:.35;cursor:default;pointer-events:none}
+
+  .field{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);
+    background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:4px 8px;height:34px}
+  .field .unit{color:var(--muted);font-weight:500}
+  select{font-family:inherit;font-size:12px;font-weight:600;padding:4px 4px;border:none;border-radius:6px;
+    background:transparent;color:var(--text);cursor:pointer}
+  input[type=number]{font-family:inherit;font-size:12px;font-weight:600;width:52px;padding:4px 6px;
+    border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text)}
+  input[type=number]:focus,select:focus{outline:2px solid rgba(91,108,255,.35);outline-offset:0}
+  .swatch{width:26px;height:24px;padding:0;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
+
+  /* ===== 본문 레이아웃 (좌측 사용법 + 캔버스) ===== */
+  .main{flex:1;display:flex;min-height:0}
+  .sidebar{width:250px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+    padding:16px 16px 18px;overflow-y:auto;display:flex;flex-direction:column}
+  .side-head{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;margin-bottom:12px}
+  .side-tip{font-size:11.5px;line-height:1.55;color:var(--text);background:linear-gradient(135deg,rgba(91,108,255,.10),rgba(124,92,255,.10));
+    border:1px solid rgba(91,108,255,.20);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+  .side-tip b{color:var(--accent)}
+  .guide{display:flex;flex-direction:column;gap:12px}
+  .guide dt{font-size:12px;font-weight:800;color:var(--accent);margin-bottom:3px}
+  .guide dd{font-size:11.5px;color:var(--text);line-height:1.4;display:flex;flex-direction:column;gap:3px}
+  .guide dd .mut{color:var(--muted);font-size:10.5px;line-height:1.5}
+  .side-foot{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);
+    font-size:11px;line-height:1.55;color:var(--muted)}
+  .side-foot b{color:var(--text)}
+  /* 크레딧 (좌측 하단) */
+  .credit{margin-top:auto;padding-top:16px}
+  .credit-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .credit-by{font-size:12.5px;color:var(--muted);font-weight:600}
+  .credit-by b{font-weight:800;letter-spacing:-.2px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .ver{font-size:10px;font-weight:800;color:#fff;letter-spacing:.3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));padding:2px 8px;border-radius:20px;
+    box-shadow:0 2px 6px rgba(91,108,255,.30)}
+  .credit-mail{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);
+    text-decoration:none;transition:.14s}
+  .credit-mail:hover{color:var(--accent)}
+  kbd{display:inline-block;font-family:inherit;font-size:10px;font-weight:700;line-height:1;
+    padding:2px 5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--soft);color:var(--text)}
+
+  .stage-wrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:24px}
+  #stage{background:var(--panel);width:690px;box-shadow:0 4px 24px rgba(0,0,0,.08);
+    display:flex;flex-direction:column;align-self:flex-start}
+
+  /* 분할 컨테이너 */
+  .split{display:flex;min-width:0;min-height:0}
+  .split-h{flex-direction:row}
+  .split-v{flex-direction:column}
+
+  /* 컷(리프) */
+  .cut{position:relative;overflow:visible;background:transparent;min-width:0;min-height:0;user-select:none}
+  /* 실제 이미지/색이 그려지고 클리핑(사선)되는 영역 (사선 시 옆칸으로 확장 가능) */
+  .cut-body{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;background:#ececf3;
+    display:flex;align-items:center;justify-content:center}
+  .cut img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  .cut .placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:800;color:#fff;letter-spacing:1px}
+  .cut .drop-tip{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:rgba(255,255,255,.9);background:rgba(0,0,0,.28);opacity:0;transition:.12s;pointer-events:none;text-align:center;padding:6px}
+  .cut:hover .drop-tip{opacity:1}
+  .cut.dragover .drop-tip{opacity:1;background:rgba(91,108,255,.55)}
+  .cut[draggable=true]{cursor:grab}
+  .cut.dragging{opacity:.35}
+  /* 드롭 방향 표시(클리핑 영향 안 받는 오버레이) */
+  .cut .ind{position:absolute;inset:0;pointer-events:none;z-index:8}
+  /* 편집 중 넘친 이미지 위에 컷(크롭) 경계 표시 */
+  .cut.selected .ind{box-shadow:inset 0 0 0 2px rgba(91,108,255,.7)}
+  /* 저장 시엔 항상 컷 기준으로 클리핑 */
+  .exporting .cut-body{overflow:hidden!important}
+  .cut.insert-left .ind{box-shadow:inset 5px 0 0 var(--accent)}
+  .cut.insert-right .ind{box-shadow:inset -5px 0 0 var(--accent)}
+  .cut.insert-top .ind{box-shadow:inset 0 5px 0 var(--accent)}
+  .cut.insert-bottom .ind{box-shadow:inset 0 -5px 0 var(--accent)}
+  /* 사선 꼭짓점 핸들 */
+  .cut .corner{position:absolute;width:14px;height:14px;border-radius:50%;
+    background:var(--accent);border:2px solid #fff;transform:translate(-50%,-50%);
+    cursor:crosshair;display:none;z-index:9;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+  .cut.selected .corner{display:block}
+  .cut .corner:hover{background:#4a59e0;transform:translate(-50%,-50%) scale(1.2)}
+  .cut.selected{outline:2px dashed var(--accent);outline-offset:-2px}
+
+  .cut .del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:6px;
+    background:rgba(0,0,0,.45);color:#fff;border:none;font-size:13px;line-height:1;display:none;
+    align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:5}
+  .cut:hover .del{display:flex}
+  .cut .del:hover{background:#e0466b}
+  .cut .fit-btn{position:absolute;top:4px;left:4px;height:20px;padding:0 8px;border-radius:6px;
+    background:rgba(0,0,0,.5);color:#fff;border:none;font-size:11px;font-weight:600;line-height:1;
+    display:none;align-items:center;cursor:pointer;z-index:5}
+  .cut:hover .fit-btn{display:flex}
+  .cut .fit-btn:hover{background:var(--accent)}
+  .cut .drag-tip{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+    font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:10px;
+    opacity:0;transition:.12s;pointer-events:none;white-space:nowrap}
+  .cut:hover .drag-tip{opacity:1}
+
+  /* 리사이즈 핸들 */
+  .h-handle{flex:0 0 8px;cursor:col-resize;background:transparent;position:relative;z-index:6}
+  .h-handle::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:2px;height:36px;background:var(--handle);border-radius:2px;transition:.12s}
+  .h-handle:hover::after{background:var(--handle-hover);height:60px}
+  .v-handle{flex:0 0 8px;cursor:row-resize;background:transparent;position:relative;z-index:7}
+  .v-handle::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    height:2px;width:36px;background:var(--handle);border-radius:2px;transition:.12s}
+  .v-handle:hover::after{background:var(--handle-hover);width:60px}
+
+  /* 내보내기 중 UI 숨김 */
+  .exporting .del,.exporting .fit-btn,.exporting .drag-tip,.exporting .drop-tip,.exporting .corner,
+  .exporting .h-handle::after,.exporting .v-handle::after{opacity:0!important;display:none!important}
+  .exporting .cut.selected{outline:none!important}
+
+  footer{background:var(--panel);border-top:1px solid var(--line);padding:8px 16px;
+    font-size:12px;color:var(--muted);flex-shrink:0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">🎬</span><span class="brand-txt">웹툰 컷 에디터</span></div>
+
+  <div class="tgroup">
+    <button onclick="addRow()">＋ 행</button>
+    <button onclick="resetEqual()">균등</button>
+    <button onclick="clearImages()">이미지 비우기</button>
+  </div>
+  <span class="tdiv"></span>
+  <div class="tgroup">
+    <button id="undoBtn" class="icon" onclick="undo()" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+    <button id="redoBtn" class="icon" onclick="redo()" title="다시실행 (Ctrl+Shift+Z)" disabled>↷</button>
+    <label class="field">기록
+      <input type="number" id="histInput" min="1" max="100" value="5" style="width:44px" oninput="setHistLimit(this.value)"><span class="unit">회</span>
+    </label>
+  </div>
+  <span class="tdiv"></span>
+  <div class="tgroup">
+    <label class="field">원고 폭
+      <select id="sizePreset" onchange="onPreset(this.value)">
+        <option value="690" selected>네이버 690</option>
+        <option value="720">카카오 720</option>
+        <option value="800">레진 800</option>
+        <option value="custom">직접…</option>
+      </select>
+      <input type="number" id="customW" min="300" max="2000" value="690" style="width:64px;display:none"
+        oninput="setStageWidth(this.value)"><span id="customUnit" class="unit" style="display:none">px</span>
+    </label>
+    <label class="field">간격
+      <input type="number" id="gapInput" min="0" max="80" value="0" oninput="setGap(this.value)"><span class="unit">px</span>
+    </label>
+    <label class="field">테두리
+      <input type="number" id="bwInput" min="0" max="24" value="0" oninput="setBorderW(this.value)"><span class="unit">px</span>
+      <input type="color" id="bcInput" value="#000000" oninput="setBorderC(this.value)" class="swatch">
+    </label>
+  </div>
+
+  <span class="spacer"></span>
+  <button class="primary" onclick="exportPNG()"><span>⬇</span> PNG 저장</button>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="side-head"><span>📖</span> 사용법</div>
+    <div class="side-tip">처음이신가요? 컷을 <b>더블클릭</b>해 이미지를 넣고, 컷 사이 <b>경계선을 드래그</b>해 크기를 맞춰보세요.</div>
+    <dl class="guide">
+      <dt>더블클릭</dt><dd>컷에 이미지 넣기</dd>
+      <dt>클릭</dt><dd>컷 선택 · 꼭짓점 표시</dd>
+      <dt><kbd>Shift</kbd>+클릭</dt><dd>상·하 분할</dd>
+      <dt><kbd>Ctrl</kbd>+클릭</dt><dd>좌·우 분할</dd>
+      <dt>경계선 드래그</dt><dd>크기 조절<span class="mut"><kbd>Shift</kbd> 미세 · <kbd>Ctrl</kbd> 이미지 고정 크롭</span></dd>
+      <dt>이미지 드래그</dt><dd>선택 후 위치 이동<span class="mut"><kbd>+</kbd>/<kbd>−</kbd> 확대·축소</span></dd>
+      <dt>꼭짓점 드래그</dt><dd>사선 만들기<span class="mut"><kbd>Shift</kbd> 수평·수직 · <kbd>Alt</kbd> 스냅 해제 · 더블클릭 해제</span></dd>
+      <dt>컷 드래그</dt><dd>다른 컷 가장자리로 이동·합치기</dd>
+      <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>되돌리기<span class="mut"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> 다시실행</span></dd>
+    </dl>
+    <div class="side-foot">완성되면 우측 상단 <b>PNG 저장</b>으로 한 장 이미지로 내보내세요.</div>
+    <div class="credit">
+      <div class="credit-row"><span class="credit-by">by <b>kanton7</b></span><span class="ver">ver. 0.12</span></div>
+      <a class="credit-mail" href="mailto:kanton7@naver.com">✉ kanton7@naver.com</a>
+    </div>
+  </aside>
+  <div class="stage-wrap">
+    <div id="stage"></div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script>
+/* ===== 데이터 모델 (재귀 트리) =====
+   node = {t:'leaf', w, img, color, fit}
+        | {t:'h', w, kids:[...]}   // 좌→우 가로 배열 (폭을 w로 분배)
+        | {t:'v', w, kids:[...]}   // 위→아래 세로 배열 (높이를 w로 분배)
+   state.root 는 't:v' (웹툰 세로 흐름). 최상위 kids 의 w 는 픽셀 높이처럼 취급. */
+const PALETTE=['#5b6cff','#ff7a59','#22c1a4','#f7b500','#a367ff','#ff5d8f','#3ec6ff','#7ad35b'];
+let colorIdx=0; const nextColor=()=>PALETTE[colorIdx++%PALETTE.length];
+const leaf=(w)=>({t:'leaf',w:w||1,img:null,color:nextColor(),fit:'contain',pos:{x:0,y:0},scale:1});
+const hsplit=(w,kids)=>({t:'h',w,kids});
+
+let state={ root:{t:'v',w:0,kids:[
+  leaf(220),
+  hsplit(220,[leaf(1),leaf(1)]),
+  leaf(260),
+  hsplit(200,[leaf(1),leaf(1),leaf(1)]),
+]}, gap:0, border:{w:0,color:'#000000'}};
+
+const stage=document.getElementById('stage');
+const fileInput=document.getElementById('fileInput');
+let pendingUpload=null;   // leaf 참조
+let dragSrc=null;         // {node,parent,index}
+let justDragged=false;
+let selectedNode=null;    // 선택된 컷(꼭짓점 표시)
+let cornerDragging=false; // 사선 꼭짓점 드래그 중
+
+const el=(tag,cls)=>{const e=document.createElement(tag);if(cls)e.className=cls;return e;};
+const topHeight=()=>state.root.kids.reduce((s,k)=>s+k.w,0);
+
+/* ===== 실행취소 / 다시실행 ===== */
+let undoStack=[], redoStack=[], histLimit=5;
+const snap=()=>JSON.parse(JSON.stringify({root:state.root,gap:state.gap,border:state.border}));
+function pushHistory(){ undoStack.push(snap()); while(undoStack.length>histLimit) undoStack.shift(); redoStack=[]; updateUndoUI(); }
+function restore(s){ state.root=s.root; state.gap=s.gap; state.border=s.border; selectedNode=null; render(); syncInputs(); }
+function undo(){ if(!undoStack.length)return; redoStack.push(snap()); restore(undoStack.pop()); updateUndoUI(); }
+function redo(){ if(!redoStack.length)return; undoStack.push(snap()); restore(redoStack.pop()); updateUndoUI(); }
+function setHistLimit(v){ histLimit=Math.max(1,Math.min(100,+v||1)); while(undoStack.length>histLimit) undoStack.shift(); updateUndoUI(); }
+function syncInputs(){ const g=document.getElementById('gapInput'),bw=document.getElementById('bwInput'),bc=document.getElementById('bcInput');
+  if(g)g.value=state.gap; if(bw)bw.value=state.border.w; if(bc)bc.value=state.border.color; }
+function updateUndoUI(){ const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');
+  if(u)u.disabled=!undoStack.length; if(r)r.disabled=!redoStack.length; }
+
+/* ===== 렌더 ===== */
+let labelN;
+function render(){
+  stage.innerHTML='';
+  stage.style.height=topHeight()+'px';
+  labelN=0;
+  buildInto(state.root, stage);
+}
+// split 노드의 kids 를 container(flex) 안에 핸들과 함께 배치
+function buildInto(split, container){
+  split.kids.forEach((kid,i)=>{
+    const kidEl=buildNode(kid, split, i);
+    kidEl.style.flex=kid.w+' '+kid.w+' 0';
+    container.appendChild(kidEl);
+    if(i<split.kids.length-1){
+      const hd=el('div', split.t==='h'?'h-handle':'v-handle');
+      hd.onpointerdown=(e)=>startSplitResize(e,split,i,split.t);
+      container.appendChild(hd);
+    }
+  });
+}
+function buildNode(node,parent,index){
+  if(node.t==='leaf') return buildLeaf(node,parent,index);
+  const box=el('div','split '+(node.t==='h'?'split-h':'split-v'));
+  buildInto(node, box);
+  return box;
+}
+function buildLeaf(cut,parent,index){
+  labelN++;
+  const cutEl=el('div','cut');
+  cutEl._node=cut;
+  if(cut===selectedNode) cutEl.classList.add('selected');
+
+  const body=el('div','cut-body'); cutEl.appendChild(body);
+  const g=state.gap||0;
+  const bd=(state.border&&state.border.w>0)?state.border:null;
+  if(cut.poly){                          // 사선: 폴리곤 경계까지 본체를 확장(옆칸 침범 허용)
+    const xs=cut.poly.map(p=>p[0]), ys=cut.poly.map(p=>p[1]);
+    const minX=Math.min(0,...xs), maxX=Math.max(100,...xs);
+    const minY=Math.min(0,...ys), maxY=Math.max(100,...ys);
+    // 확장 박스를 컷 간격만큼 안쪽으로 수축 → 사선에도 거터 반영
+    const bl='calc('+minX+'% + '+(g/2)+'px)', bt='calc('+minY+'% + '+(g/2)+'px)';
+    const bw='calc('+(maxX-minX)+'% - '+g+'px)', bh='calc('+(maxY-minY)+'% - '+g+'px)';
+    body.style.left=bl; body.style.top=bt; body.style.right='auto'; body.style.bottom='auto';
+    body.style.width=bw; body.style.height=bh;
+    const pts=cut.poly.map(p=>[ (p[0]-minX)/(maxX-minX)*100, (p[1]-minY)/(maxY-minY)*100 ]);
+    body.style.clipPath='polygon('+pts.map(p=>p[0]+'% '+p[1]+'%').join(',')+')';
+    if(bd){                              // 사선 테두리는 SVG 외곽선으로(클리핑 영향 없음)
+      const NS='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(NS,'svg');
+      svg.setAttribute('viewBox','0 0 100 100'); svg.setAttribute('preserveAspectRatio','none');
+      svg.style.cssText='position:absolute;left:'+bl+';top:'+bt+';width:'+bw+';height:'+bh+';pointer-events:none;overflow:visible;z-index:4';
+      const pg=document.createElementNS(NS,'polygon');
+      pg.setAttribute('points', pts.map(p=>p[0]+','+p[1]).join(' '));
+      pg.setAttribute('fill','none'); pg.setAttribute('stroke',bd.color);
+      pg.setAttribute('stroke-width',bd.w); pg.setAttribute('vector-effect','non-scaling-stroke');
+      pg.setAttribute('stroke-linejoin','miter');
+      svg.appendChild(pg); cutEl.appendChild(svg);
+    }
+  }else{
+    if(g>0){                             // 컷 간격(거터)
+      body.style.left=body.style.top=body.style.right=body.style.bottom=(g/2)+'px';
+      body.style.width='auto'; body.style.height='auto';
+    }
+    if(bd) body.style.border=bd.w+'px solid '+bd.color;   // 사각형은 CSS 테두리
+  }
+
+  if(cut.img){
+    body.style.background='#fff';
+    if(cut===selectedNode) body.style.overflow='visible';  // 편집 중엔 넘친 이미지도 보이게
+    const pos=cut.pos||(cut.pos={x:0,y:0});               // 픽셀 오프셋
+    const im=el('img'); im.src=cut.img; cutEl._img=im;
+    const applyPos=()=>{
+      const s=cut.scale||1;
+      if(cut.fixed) im.style.transform='translate(calc(-50% + '+pos.x+'px), calc(-50% + '+pos.y+'px)) scale('+s+')';
+      else im.style.transform='translate('+pos.x+'px, '+pos.y+'px) scale('+s+')';
+    };
+    if(cut.fixed){                       // 이미지 크기 고정 → 컷은 크롭 창
+      im.style.position='absolute'; im.style.left='50%'; im.style.top='50%';
+      im.style.width=cut.fixed.w+'px'; im.style.height=cut.fixed.h+'px';
+      im.style.objectFit=(cut.fit==='cover'?'cover':'contain');
+    }else{                               // 컷 크기에 맞춰 이미지 스케일
+      im.style.width='100%'; im.style.height='100%';
+      im.style.objectFit=(cut.fit==='contain'?'contain':'cover');
+    }
+    applyPos();
+    body.appendChild(im);
+    // 선택된 컷에서 이미지 드래그 → 위치 이동(픽셀 1:1, 상하·대각선 자유, 컷 밖 허용)
+    if(cut===selectedNode){
+      body.style.cursor='move';
+      body.onpointerdown=(ev)=>{
+        if(ev.target.closest('.corner,.fit-btn,.del'))return;
+        ev.preventDefault(); pushHistory();
+        const sx=ev.clientX, sy=ev.clientY, p0={x:pos.x,y:pos.y};
+        const mv=(e2)=>{ pos.x=p0.x+(e2.clientX-sx); pos.y=p0.y+(e2.clientY-sy); applyPos(); };
+        const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
+        document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+      };
+    }
+    const fb=el('button','fit-btn');
+    fb.textContent = cut.fixed ? '고정' : (cut.fit==='contain'?'맞춤':'채움');
+    fb.title = cut.fixed ? '이미지 크기 고정됨 — 클릭하면 컷에 맞춰 다시 축소'
+                         : '이미지 맞춤: 채움=부분 잘림 / 맞춤=전체 축소';
+    fb.onclick=(e)=>{e.stopPropagation();pushHistory();
+      if(cut.fixed) cut.fixed=null;
+      else cut.fit=(cut.fit==='contain'?'cover':'contain');
+      render();};
+    cutEl.appendChild(fb);
+  }else{
+    const ph=el('div','placeholder'); ph.style.background=cut.color; ph.textContent=labelN;
+    body.appendChild(ph);
+  }
+
+  const tip=el('div','drop-tip'); tip.textContent='더블클릭/드롭하여 이미지'; body.appendChild(tip);
+  cutEl.appendChild(el('div','ind'));
+  const dtip=el('div','drag-tip'); dtip.textContent='⤢ 드래그로 이동'; cutEl.appendChild(dtip);
+  const del=el('button','del'); del.textContent='×';
+  del.onclick=(e)=>{e.stopPropagation();removeLeaf(cut);}; cutEl.appendChild(del);
+
+  // 사선 꼭짓점 핸들 (드래그=사선 자르기, 더블클릭=해제)
+  const cpts = cut.poly || [[0,0],[100,0],[100,100],[0,100]];
+  cpts.forEach((p,ci)=>{
+    const g=el('div','corner'); g.style.left=p[0]+'%'; g.style.top=p[1]+'%';
+    g.title='드래그: 사선으로 자르기 · 더블클릭: 사선 해제';
+    g.onpointerdown=(ev)=>startCorner(ev,cut,ci,cutEl);
+    g.ondblclick=(ev)=>{ev.stopPropagation();pushHistory();cut.poly=null;render();};
+    cutEl.appendChild(g);
+  });
+
+  // Shift+클릭=위·아래 분할 / Ctrl+클릭=좌·우 분할 / 그냥 클릭=선택(꼭짓점 표시) / 더블클릭=이미지
+  cutEl.onclick=(e)=>{
+    if(justDragged)return;
+    if(e.shiftKey){e.preventDefault();splitLeaf(cut,parent,index,'v');return;}
+    if(e.ctrlKey||e.metaKey){e.preventDefault();splitLeaf(cut,parent,index,'h');return;}
+    selectedNode=cut; render();
+  };
+  cutEl.ondblclick=(e)=>{
+    if(e.shiftKey||e.ctrlKey||e.metaKey||e.altKey)return;
+    pendingUpload=cut; fileInput.click();
+  };
+
+  // 컷 드래그(이동/재배치)
+  cutEl.draggable=(cut!==selectedNode);   // 선택 중엔 이미지 팬 우선(이동 드래그 off)
+  cutEl.ondragstart=(e)=>{
+    if(cornerDragging){e.preventDefault();return;}   // 사선 편집 중엔 이동 금지
+    dragSrc={node:cut,parent,index};justDragged=true;
+    e.dataTransfer.setData('x-cut','1');e.dataTransfer.effectAllowed='move';
+    cutEl.classList.add('dragging');};
+  cutEl.ondragend=()=>{cutEl.classList.remove('dragging');
+    document.querySelectorAll('.cut').forEach(c=>c.classList.remove('insert-left','insert-right','insert-top','insert-bottom','dragover'));
+    setTimeout(()=>justDragged=false,60);};
+
+  const clearZones=()=>cutEl.classList.remove('dragover','insert-left','insert-right','insert-top','insert-bottom');
+  const zoneOf=(e)=>{const r=cutEl.getBoundingClientRect();
+    const ty=(e.clientY-r.top)/r.height, tx=(e.clientX-r.left)/r.width;
+    if(ty<0.25)return 'top'; if(ty>0.75)return 'bottom';
+    return tx>0.5?'right':'left';};
+  cutEl.ondragover=(e)=>{
+    const internal=e.dataTransfer.types.includes('x-cut'); e.preventDefault();
+    if(internal){ if(dragSrc&&dragSrc.node===cut){clearZones();return;}
+      clearZones(); cutEl.classList.add('insert-'+zoneOf(e));
+    }else cutEl.classList.add('dragover');
+  };
+  cutEl.ondragleave=clearZones;
+  cutEl.ondrop=(e)=>{e.preventDefault();
+    const internal=e.dataTransfer.types.includes('x-cut'); const z=zoneOf(e); clearZones();
+    if(internal){
+      if(z==='left')      moveRelative(dragSrc,cut,'h',true);
+      else if(z==='right')moveRelative(dragSrc,cut,'h',false);
+      else if(z==='top')  moveRelative(dragSrc,cut,'v',true);
+      else                moveRelative(dragSrc,cut,'v',false);
+    }else{const f=e.dataTransfer.files[0]; if(f) readImage(f,cut);}
+  };
+  return cutEl;
+}
+
+/* ===== 사선(꼭짓점) 편집 ===== */
+const DEFPOLY=()=>[[0,0],[100,0],[100,100],[0,100]];
+function findCutEl(node){return Array.from(document.querySelectorAll('.cut')).find(c=>c._node===node)||null;}
+// 드래그하는 꼭짓점 ci 가 공유 경계에 있으면 이웃 정보 반환
+function neighborInfo(cut,ci){
+  const info=findParent(state.root,cut); if(!info)return null;
+  const parent=info.parent, index=info.index;
+  let nIdx,corner,side,axis;
+  if(parent.t==='h'){
+    if(ci===1||ci===2){nIdx=index+1; corner=(ci===1?0:3); side='right';}
+    else              {nIdx=index-1; corner=(ci===0?1:2); side='left';}
+    axis='x';
+  }else{
+    if(ci===0||ci===1){nIdx=index-1; corner=(ci===0?3:2); side='top';}
+    else              {nIdx=index+1; corner=(ci===2?1:0); side='bottom';}
+    axis='y';
+  }
+  if(nIdx<0||nIdx>=parent.kids.length)return null;
+  const node=parent.kids[nIdx];
+  if(!node||node.t!=='leaf')return null;
+  return {node,corner,side,axis};
+}
+function startCorner(e,cut,ci,cutEl){
+  e.preventDefault(); e.stopPropagation();
+  pushHistory();
+  cornerDragging=true; selectedNode=cut;
+  if(!cut.poly) cut.poly=DEFPOLY();
+  const rect=cutEl.getBoundingClientRect();
+  const nb=neighborInfo(cut,ci);
+  let nbRect=null;
+  if(nb){ const nEl=findCutEl(nb.node); if(nEl) nbRect=nEl.getBoundingClientRect();
+    if(!nb.node.poly) nb.node.poly=DEFPOLY(); }
+  const sx=e.clientX, sy=e.clientY, p0=cut.poly[ci].slice();  // Shift 축 고정 기준
+  const move=(ev)=>{
+    // 경계(0~100%) 너머로도 이동 허용 → 사선을 반대편으로 넘겨 이웃 컷 포인트를 움직임
+    let x=Math.max(-150,Math.min(250,(ev.clientX-rect.left)/rect.width*100));
+    let y=Math.max(-150,Math.min(250,(ev.clientY-rect.top)/rect.height*100));
+    if(ev.shiftKey){                              // Shift=수직/수평 고정
+      if(Math.abs(ev.clientX-sx)>=Math.abs(ev.clientY-sy)) y=p0[1];  // 수평 이동
+      else x=p0[0];                                                   // 수직 이동
+    }
+    // 인접 꼭짓점(양옆·위아래)의 x/y 에 근접하면 스냅 → 수평·수직 정렬 (Alt 누르면 스냅 해제)
+    if(!ev.altKey){
+      const a1=cut.poly[(ci+1)%4], a2=cut.poly[(ci+3)%4];
+      const spx=8/rect.width*100, spy=8/rect.height*100;
+      [a1,a2].forEach(a=>{ if(Math.abs(x-a[0])<spx)x=a[0]; if(Math.abs(y-a[1])<spy)y=a[1]; });
+    }
+    cut.poly[ci]=[x,y];
+    // 이웃 꼭짓점이 같은 물리 지점을 따라오게(경계선 공유) → 옆칸을 침범해 채움
+    if(nb && nbRect){
+      if(nb.axis==='x'){
+        const bX=(nb.side==='right')?100:0;
+        const offPhys=(x-bX)/100*rect.width;              // 경계로부터의 물리 이동량(px)
+        const base=(nb.side==='right')?0:100;
+        nb.node.poly[nb.corner]=[base+offPhys/nbRect.width*100, y];
+      }else{
+        const bY=(nb.side==='bottom')?100:0;
+        const offPhys=(y-bY)/100*rect.height;
+        const base=(nb.side==='bottom')?0:100;
+        nb.node.poly[nb.corner]=[x, base+offPhys/nbRect.height*100];
+      }
+    }
+    render();
+  };
+  const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);
+    cornerDragging=false; render();};
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
+}
+
+/* ===== 분할 ===== */
+// dir 'v' = 위/아래, 'h' = 좌/우
+function splitLeaf(cut,parent,index,dir){
+  pushHistory();
+  if(parent.t===dir){                 // 같은 축이면 형제로 삽입(중첩 없이 평탄)
+    const nb=leaf(); nb.w=cut.w/2; cut.w=cut.w/2;
+    parent.kids.splice(index+1,0,nb);
+  }else{                              // 다른 축이면 이 컷 자리에 중첩 분할 생성
+    const nb=leaf(); const ow=cut.w; cut.w=1; nb.w=1;
+    parent.kids[index]={t:dir,w:ow,kids:[cut,nb]};
+  }
+  render();
+}
+
+/* 인접 컷 이미지 고정(on=true: 현재 표시 크기로 고정 / false: 해제) */
+function applyFixed(kidEl,on){
+  if(!kidEl)return;
+  const cutEls = (kidEl.classList&&kidEl.classList.contains('cut')) ? [kidEl]
+    : Array.from(kidEl.querySelectorAll?kidEl.querySelectorAll('.cut'):[]);
+  cutEls.forEach(cEl=>{
+    const node=cEl._node; if(!node||!node.img)return;
+    if(on){ const img=cEl._img;
+      if(img){const r=img.getBoundingClientRect();
+        node.fixed={w:Math.max(1,Math.round(r.width)),h:Math.max(1,Math.round(r.height))};}
+    }else node.fixed=null;
+  });
+}
+
+/* ===== 리사이즈 (옆/위아래 형제와 나눔, Shift=미세, Ctrl=이미지 크기 고정 크롭) ===== */
+function startSplitResize(e,split,i,dir){
+  e.preventDefault();
+  pushHistory();
+  const handleEl=e.target;
+  const box=handleEl.parentElement;
+  const a=split.kids[i], b=split.kids[i+1];
+  const sum=a.w+b.w;
+  const rect=box.getBoundingClientRect();
+  const total=split.kids.reduce((s,k)=>s+k.w,0);
+  const pairPx=(dir==='h'?rect.width:rect.height)*(sum/total);
+  const startRatio=a.w/sum;
+  // Ctrl 누르고 드래그하면 인접 컷 이미지 크기 고정(프레임만 변경), 아니면 해제
+  const fixMode=(e.ctrlKey||e.metaKey);
+  applyFixed(handleEl.previousElementSibling,fixMode);
+  applyFixed(handleEl.nextElementSibling,fixMode);
+  render();
+  let acc=0, prev=(dir==='h'?e.clientX:e.clientY);
+  const move=(ev)=>{
+    const cur=(dir==='h'?ev.clientX:ev.clientY);
+    acc+=(cur-prev)*(ev.shiftKey?0.2:1); prev=cur;
+    let r=Math.max(0.1,Math.min(0.9,startRatio+acc/pairPx));
+    a.w=sum*r; b.w=sum*(1-r);
+    render();
+  };
+  const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);};
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
+}
+
+/* ===== 트리 유틸 ===== */
+function findParent(cur,node){
+  if(cur.t==='leaf')return null;
+  for(let i=0;i<cur.kids.length;i++){
+    if(cur.kids[i]===node)return {parent:cur,index:i};
+    const r=findParent(cur.kids[i],node); if(r)return r;
+  }
+  return null;
+}
+function detach(node){const info=findParent(state.root,node); if(info)info.parent.kids.splice(info.index,1);}
+// 빈/단일 자식 정리 + 같은 축 평탄화
+function cleanup(node){
+  if(node.t==='leaf')return;
+  node.kids.forEach(cleanup);
+  node.kids=node.kids.filter(k=>k.t==='leaf'||k.kids.length>0);
+  node.kids=node.kids.map(k=>{
+    if(k.t!=='leaf'&&k.kids.length===1){const only=k.kids[0];only.w=k.w;return only;}
+    return k;
+  });
+  const flat=[];
+  node.kids.forEach(k=>{
+    if(k.t===node.t){ const sub=k.kids.reduce((s,x)=>s+x.w,0);
+      k.kids.forEach(x=>{x.w=x.w/sub*k.w;flat.push(x);}); }
+    else flat.push(k);
+  });
+  node.kids=flat;
+}
+// src 를 tgt 기준 dir 방향(before=앞) 으로 이동
+function moveRelative(src,tgt,dir,before){
+  if(!src||src.node===tgt)return;
+  pushHistory();
+  detach(src.node);
+  const info=findParent(state.root,tgt); if(!info){cleanup(state.root);render();return;}
+  const tp=info.parent, ti=info.index;
+  if(tp.t===dir){
+    tp.kids.splice(before?ti:ti+1,0,src.node);
+    tp.kids.forEach(k=>k.w=1);
+  }else{
+    src.node.w=1; tgt.w=1;
+    tp.kids[ti]={t:dir,w:tgt.w,kids:before?[src.node,tgt]:[tgt,src.node]};
+  }
+  cleanup(state.root);
+  if(state.root.kids.length===0) state.root.kids.push(leaf(220));
+  dragSrc=null; render();
+}
+
+/* ===== 구조 편집 ===== */
+function addRow(){pushHistory();state.root.kids.push(leaf(220));render();}
+function removeLeaf(cut){
+  pushHistory();
+  detach(cut); cleanup(state.root);
+  if(state.root.kids.length===0)state.root.kids.push(leaf(220));
+  render();
+}
+function resetEqual(){
+  pushHistory();
+  const walk=(n,isRoot)=>{ if(n.t==='leaf')return;
+    n.kids.forEach(k=>k.w=isRoot?220:1); n.kids.forEach(k=>walk(k,false)); };
+  walk(state.root,true); render();
+}
+function clearImages(){
+  pushHistory();
+  const walk=(n)=>{ if(n.t==='leaf'){n.img=null;return;} n.kids.forEach(walk); };
+  walk(state.root); render();
+}
+
+/* ===== 이미지 업로드 ===== */
+fileInput.onchange=(e)=>{const f=e.target.files[0]; if(f&&pendingUpload)readImage(f,pendingUpload); fileInput.value='';};
+function readImage(file,cut){const rd=new FileReader();
+  rd.onload=()=>{pushHistory();cut.img=rd.result;render();}; rd.readAsDataURL(file);}
+
+/* ===== 컷 간격(거터) ===== */
+function setGap(v){pushHistory();state.gap=Math.max(0,+v||0);render();}
+/* ===== 컷 테두리 ===== */
+function setBorderW(v){pushHistory();state.border.w=Math.max(0,+v||0);render();}
+function setBorderC(v){pushHistory();state.border.color=v;render();}
+
+/* ===== 폭 프리셋 ===== */
+function setStageWidth(v){stage.style.width=v+'px';}
+function onPreset(v){const cw=document.getElementById('customW'),u=document.getElementById('customUnit');
+  if(v==='custom'){cw.style.display='';u.style.display='';cw.focus();setStageWidth(cw.value);}
+  else{cw.style.display='none';u.style.display='none';cw.value=v;setStageWidth(v);}}
+
+/* ===== PNG 내보내기 ===== */
+function exportPNG(){
+  stage.classList.add('exporting');
+  html2canvas(stage,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(canvas=>{
+    stage.classList.remove('exporting');
+    const a=document.createElement('a'); a.download='webtoon-layout.png';
+    a.href=canvas.toDataURL('image/png'); a.click();
+  }).catch(err=>{stage.classList.remove('exporting');alert('저장 중 오류: '+err);});
+}
+
+// 빈 영역/경계선 클릭 시 선택 해제
+stage.onclick=(e)=>{ if(e.target===stage||e.target.classList.contains('h-handle')||e.target.classList.contains('v-handle')){selectedNode=null;render();} };
+
+// 사용법 팝오버
+function toggleHelp(){const p=document.getElementById('helpPanel'); p.hidden=!p.hidden;}
+document.addEventListener('click',(e)=>{
+  const w=document.querySelector('.help-wrap'), p=document.getElementById('helpPanel');
+  if(p&&!p.hidden&&w&&!w.contains(e.target)) p.hidden=true;
+});
+
+// 단축키: Ctrl+Z 되돌리기, Ctrl+Shift+Z / Ctrl+Y 다시실행, 선택 컷 +/- 확대·축소
+document.addEventListener('keydown',(e)=>{
+  const inField=/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod && (e.key==='z'||e.key==='Z')){ if(inField)return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
+  if(mod && (e.key==='y'||e.key==='Y')){ if(inField)return; e.preventDefault(); redo(); return; }
+  if(inField)return;
+  if(!selectedNode||!selectedNode.img)return;
+  if(e.key==='+'||e.key==='='){ pushHistory(); selectedNode.scale=Math.min(10,(selectedNode.scale||1)*1.1); e.preventDefault(); render(); }
+  else if(e.key==='-'||e.key==='_'){ pushHistory(); selectedNode.scale=Math.max(0.1,(selectedNode.scale||1)/1.1); e.preventDefault(); render(); }
+});
+
+render();
+</script>
+</body>
+</html>
