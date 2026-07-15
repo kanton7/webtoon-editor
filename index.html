@@ -868,4 +868,35 @@ function exportPNG(){
   html2canvas(stage,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(canvas=>{
     stage.classList.remove('exporting');
     const a=document.createElement('a'); a.download='webtoon-layout.png';
-    a.href=canvas.toDataURL('image/png'); a.cl
+    a.href=canvas.toDataURL('image/png'); a.click();
+  }).catch(err=>{ stage.classList.remove('exporting'); console.error(err); alert('PNG 내보내기 실패: '+(err&&err.message||err)); });
+}
+
+/* ===== 키보드 단축키 ===== */
+document.addEventListener('keydown',(e)=>{
+  const ed=document.activeElement;
+  const typing = ed && (ed.isContentEditable || ed.tagName==='INPUT' || ed.tagName==='SELECT' || ed.tagName==='TEXTAREA');
+  if((e.ctrlKey||e.metaKey) && (e.key==='z'||e.key==='Z')){ e.preventDefault(); e.shiftKey?redo():undo(); return; }
+  if((e.ctrlKey||e.metaKey) && (e.key==='y'||e.key==='Y')){ e.preventDefault(); redo(); return; }
+  if(typing) return;
+  if(selectedNode && selectedNode.img && (e.key==='+'||e.key==='='||e.key==='-'||e.key==='_')){
+    e.preventDefault(); pushHistory();
+    const f=(e.key==='+'||e.key==='=')?1.08:1/1.08;
+    selectedNode.scale=Math.max(0.1,Math.min(8,(selectedNode.scale||1)*f));
+    render();
+  }
+});
+
+/* ===== 빈 곳 클릭 시 선택 해제 ===== */
+document.querySelector('.stage-wrap').addEventListener('pointerdown',(e)=>{
+  if(e.target.classList.contains('stage-wrap') && selectedNode){ selectedNode=null; render(); }
+});
+
+/* ===== 초기화 ===== */
+render();
+buildPalette();
+syncInputs();
+updateUndoUI();
+</script>
+</body>
+</html>
