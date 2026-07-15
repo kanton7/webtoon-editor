@@ -79,8 +79,45 @@
     padding:2px 5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--soft);color:var(--text)}
 
   .stage-wrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:24px}
+
+  /* ===== 말풍선 팔레트 (우측) ===== */
+  .palette{width:190px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);
+    padding:16px 14px 18px;overflow-y:auto}
+  .pal-tip{font-size:11px;line-height:1.5;color:var(--muted);margin-bottom:12px}
+  .pal-tip b{color:var(--accent)}
+  .pal-grid{display:flex;flex-direction:column}
+  .pal-cat{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin:12px 0 6px}
+  .pal-cat:first-child{margin-top:0}
+  .pal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pal-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;
+    border:1px solid var(--line);border-radius:11px;background:var(--soft);cursor:grab;transition:.14s}
+  .pal-item:hover{border-color:var(--accent);background:#fff;box-shadow:0 3px 10px rgba(91,108,255,.12);transform:translateY(-1px)}
+  .pal-item:active{cursor:grabbing}
+  .pal-ico{width:100%;height:42px;pointer-events:none}
+  .pal-ico svg{width:100%;height:100%}
+  .pal-item span{font-size:10.5px;font-weight:600;color:var(--text)}
+
+  /* ===== 배치된 말풍선 ===== */
+  .balloon-layer{position:absolute;inset:0;pointer-events:none;z-index:15}
+  .balloon{position:absolute;pointer-events:auto;cursor:move}
+  .balloon .balloon-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .balloon-text{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:14px;font-weight:700;color:#111;line-height:1.25;overflow:hidden;word-break:break-word;outline:none}
+  .balloon-text:empty::before{content:'더블클릭 입력';color:#c3c3d6;font-weight:500}
+  .balloon .b-del{position:absolute;top:-9px;right:-9px;width:20px;height:20px;border-radius:50%;
+    background:#e0466b;color:#fff;font-size:13px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:3}
+  .balloon .b-resize{position:absolute;right:-6px;bottom:-6px;width:14px;height:14px;border-radius:50%;
+    background:var(--accent);border:2px solid #fff;cursor:nwse-resize;display:none;z-index:3}
+  .balloon .b-flip{position:absolute;top:-9px;right:16px;width:20px;height:20px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:3}
+  .balloon .b-rot{position:absolute;top:-28px;left:50%;width:15px;height:15px;margin-left:-7.5px;border-radius:50%;
+    background:#22c1a4;border:2px solid #fff;cursor:grab;display:none;z-index:3}
+  .balloon .b-rot::before{content:"";position:absolute;top:13px;left:50%;width:2px;height:13px;background:#22c1a4;transform:translateX(-50%)}
+  .balloon:hover .b-del,.balloon:hover .b-resize,.balloon:hover .b-flip,.balloon:hover .b-rot{display:block}
+  .exporting .b-del,.exporting .b-resize,.exporting .b-flip,.exporting .b-rot{display:none!important}
+  .exporting .balloon-text:empty::before{content:''}
   #stage{background:var(--panel);width:690px;box-shadow:0 4px 24px rgba(0,0,0,.08);
-    display:flex;flex-direction:column;align-self:flex-start}
+    display:flex;flex-direction:column;align-self:flex-start;position:relative}
 
   /* 분할 컨테이너 */
   .split{display:flex;min-width:0;min-height:0}
@@ -219,6 +256,11 @@
   <div class="stage-wrap">
     <div id="stage"></div>
   </div>
+  <aside class="palette">
+    <div class="side-head"><span>💬</span> 말풍선</div>
+    <div class="pal-tip">아이콘을 컷 위로 <b>드래그</b>해 배치하고, 말풍선을 <b>더블클릭</b>해 글자를 입력하세요.</div>
+    <div class="pal-grid" id="palGrid"></div>
+  </aside>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" style="display:none">
@@ -239,7 +281,7 @@ let state={ root:{t:'v',w:0,kids:[
   hsplit(220,[leaf(1),leaf(1)]),
   leaf(260),
   hsplit(200,[leaf(1),leaf(1),leaf(1)]),
-]}, gap:0, border:{w:0,color:'#000000'}};
+]}, gap:0, border:{w:0,color:'#000000'}, balloons:[]};
 
 const stage=document.getElementById('stage');
 const fileInput=document.getElementById('fileInput');
@@ -254,9 +296,9 @@ const topHeight=()=>state.root.kids.reduce((s,k)=>s+k.w,0);
 
 /* ===== 실행취소 / 다시실행 ===== */
 let undoStack=[], redoStack=[], histLimit=5;
-const snap=()=>JSON.parse(JSON.stringify({root:state.root,gap:state.gap,border:state.border}));
+const snap=()=>JSON.parse(JSON.stringify({root:state.root,gap:state.gap,border:state.border,balloons:state.balloons}));
 function pushHistory(){ undoStack.push(snap()); while(undoStack.length>histLimit) undoStack.shift(); redoStack=[]; updateUndoUI(); }
-function restore(s){ state.root=s.root; state.gap=s.gap; state.border=s.border; selectedNode=null; render(); syncInputs(); }
+function restore(s){ state.root=s.root; state.gap=s.gap; state.border=s.border; state.balloons=s.balloons||[]; selectedNode=null; render(); syncInputs(); }
 function undo(){ if(!undoStack.length)return; redoStack.push(snap()); restore(undoStack.pop()); updateUndoUI(); }
 function redo(){ if(!redoStack.length)return; undoStack.push(snap()); restore(redoStack.pop()); updateUndoUI(); }
 function setHistLimit(v){ histLimit=Math.max(1,Math.min(100,+v||1)); while(undoStack.length>histLimit) undoStack.shift(); updateUndoUI(); }
@@ -272,6 +314,7 @@ function render(){
   stage.style.height=topHeight()+'px';
   labelN=0;
   buildInto(state.root, stage);
+  renderBalloons();
 }
 // split 노드의 kids 를 container(flex) 안에 핸들과 함께 배치
 function buildInto(split, container){
@@ -430,6 +473,8 @@ function buildLeaf(cut,parent,index){
   };
   cutEl.ondragleave=clearZones;
   cutEl.ondrop=(e)=>{e.preventDefault();
+    if(e.dataTransfer.types.includes('x-balloon')){e.stopPropagation();clearZones();
+      addBalloonAt(e.clientX,e.clientY,e.dataTransfer.getData('x-balloon'));return;}
     const internal=e.dataTransfer.types.includes('x-cut'); const z=zoneOf(e); clearZones();
     if(internal){
       if(z==='left')      moveRelative(dragSrc,cut,'h',true);
@@ -644,6 +689,173 @@ function setGap(v){pushHistory();state.gap=Math.max(0,+v||0);render();}
 function setBorderW(v){pushHistory();state.border.w=Math.max(0,+v||0);render();}
 function setBorderC(v){pushHistory();state.border.color=v;render();}
 
+/* ===== 말풍선 템플릿 ===== */
+const BALLOON_GROUPS=[
+  ['말하기',[['normal','기본'],['soft','부드러움'],['whisper','속삭임'],['faint','희미']]],
+  ['감정',[['nervous','불안'],['cheerful','신남'],['friendly','다정'],['handdraw','손그림']]],
+  ['강조',[['shout','외침'],['scream','비명'],['excited','흥분'],['electric','전기'],['broadcast','방송']]],
+  ['생각·특수',[['thought','생각'],['angry','분노'],['poison','독기'],['fuzzy','충격']]],
+  ['효과',[['explosion','폭발'],['electronic','전자음'],['flash','플래시'],['uniflash','집중선']]],
+  ['나레이션',[['narration','박스'],['doublebox','이중선'],['roughbox','거친박스'],['system','시스템']]]
+];
+const _BOXTYPES=['narration','doublebox','roughbox','system'];
+const _ST='fill="#fff" stroke="#111" stroke-width="3.2" stroke-linejoin="round"';
+const _STR='fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round"';
+const _pol=(cx,cy,rx,ry,a,r)=>[cx+rx*(r==null?1:r)*Math.cos(a),cy+ry*(r==null?1:r)*Math.sin(a)];
+const _rng=(seed)=>{let s=seed;return ()=>{s=(s*9301+49297)%233280;return s/233280;};};
+function _smoothOpen(p){const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];let d='M'+p[0][0].toFixed(1)+' '+p[0][1].toFixed(1);
+  for(let i=1;i<p.length-1;i++){const c=p[i],x=mid(c,p[i+1]);d+='Q'+c[0].toFixed(1)+' '+c[1].toFixed(1)+' '+x[0].toFixed(1)+' '+x[1].toFixed(1);}
+  return d+'L'+p[p.length-1][0].toFixed(1)+' '+p[p.length-1][1].toFixed(1);}
+function _blobTail(rf,dash){const cx=100,cy=58,rx=88,ry=50,ghi=110*Math.PI/180,glo=70*Math.PI/180,N=64,span=2*Math.PI-(ghi-glo),p=[];
+  for(let i=0;i<=N;i++){const a=ghi+span*i/N;p.push(_pol(cx,cy,rx,ry,a,rf(a)));}
+  const d=_smoothOpen(p)+'L58 162 Z',ds=dash?' stroke-dasharray="'+dash+'"':'',cap=dash==='1 8'?' stroke-linecap="round"':'';
+  return '<path d="'+d+'" '+_ST+ds+cap+'/>';}
+function _rrectTail(){const x0=10,y0=14,x1=190,y1=112,r=36,tipx=58,tipy=160,bx1=78,bx2=110;
+  const d='M'+(x0+r)+' '+y0+' H'+(x1-r)+' Q'+x1+' '+y0+' '+x1+' '+(y0+r)+' V'+(y1-r)+' Q'+x1+' '+y1+' '+(x1-r)+' '+y1+' H'+bx2+' L'+tipx+' '+tipy+' L'+bx1+' '+y1+' H'+(x0+r)+' Q'+x0+' '+y1+' '+x0+' '+(y1-r)+' V'+(y0+r)+' Q'+x0+' '+y0+' '+(x0+r)+' '+y0+' Z';
+  return '<path d="'+d+'" '+_ST+'/>';}
+function _starD(spikes,inner,rx,ry,cy){rx=rx||88;ry=ry||52;cy=cy||60;const cx=100,n=spikes*2;let s='';
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n-Math.PI/2,r=(i%2===0)?1:inner;s+=(i===0?'M':'L')+(cx+rx*r*Math.cos(a)).toFixed(1)+' '+(cy+ry*r*Math.sin(a)).toFixed(1);}return s+'Z';}
+function _star(spikes,inner,join){return '<path d="'+_starD(spikes,inner)+'" fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="'+(join||'miter')+'"/>';}
+function _cloud(bubbles){const cx=100,cy=56,rx=86,ry=46,bumps=11,P=[];
+  for(let i=0;i<bumps;i++)P.push(_pol(cx,cy,rx,ry,Math.PI*2*i/bumps-Math.PI/2));
+  let d='M'+P[0][0].toFixed(1)+' '+P[0][1].toFixed(1);
+  for(let i=0;i<bumps;i++){const q=P[(i+1)%bumps],ch=Math.hypot(q[0]-P[i][0],q[1]-P[i][1]),r=(ch*0.62).toFixed(1);d+='A'+r+' '+r+' 0 0 1 '+q[0].toFixed(1)+' '+q[1].toFixed(1);}
+  let out='<path d="'+d+'Z" '+_STR+'/>';
+  if(bubbles)out+='<circle cx="70" cy="'+(cy+ry+24)+'" r="9" '+_STR+'/><circle cx="52" cy="'+(cy+ry+44)+'" r="5.5" '+_STR+'/>';
+  return out;}
+function _flame(){return '<path d="M100 8 C112 30 126 30 122 52 C140 52 150 78 134 92 C150 100 148 126 120 122 C114 140 86 140 80 122 C52 126 50 100 66 92 C50 78 60 52 78 52 C74 30 88 30 100 8 Z" '+_ST+'/>';}
+function _drip(){const cx=100,cy=50,rx=86,ry=40,left=cx-rx,lens=[22,36,16,40,24];let d='M'+(cx+rx)+' '+cy+' A'+rx+' '+ry+' 0 0 0 '+left+' '+cy+' ';
+  for(let i=0;i<lens.length;i++){const x1=left+2*rx*i/lens.length,x2=left+2*rx*(i+1)/lens.length,w=x2-x1;d+='Q'+(x1+w*0.5).toFixed(0)+' '+(cy+ry+lens[i])+' '+x2.toFixed(0)+' '+cy+' ';}
+  return '<path d="'+d+'Z" '+_ST+'/>';}
+function _fuzzy(){const cx=100,cy=62,rx=82,ry=46,n=90,rnd=_rng(7);let s='';
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n,ro=1.05+rnd()*0.13,ri=0.82+(rnd()*0.06-0.03),o=_pol(cx,cy,rx,ry,a,ro),ii=_pol(cx,cy,rx,ry,a+Math.PI/n,ri);
+    s+=(i===0?'M':'L')+o[0].toFixed(1)+' '+o[1].toFixed(1)+' L'+ii[0].toFixed(1)+' '+ii[1].toFixed(1)+' ';}
+  return '<path d="'+s+'Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="miter"/>';}
+function _roughBox(){const rnd=_rng(11),c=[[10,18],[192,16],[190,126],[8,128],[10,18]];let d='M';
+  for(let k=0;k<4;k++){const a=c[k],b=c[k+1];d+=a[0].toFixed(0)+' '+a[1].toFixed(0)+' ';
+    for(const t of [0.33,0.66]){const x=a[0]+(b[0]-a[0])*t+(rnd()*8-4),y=a[1]+(b[1]-a[1])*t+(rnd()*8-4);d+='L'+x.toFixed(0)+' '+y.toFixed(0)+' ';}d+='L';}
+  return '<path d="'+d.slice(0,-1)+'Z" '+_STR+'/>';}
+function _broadcast(){return '<path d="'+_starD(14,0.74)+'" '+_ST+'/><path d="'+_starD(14,0.74,76,42)+'" fill="none" stroke="#111" stroke-width="2.2"/>';}
+function _rectPt(cx,cy,hw,hh,a){const c=Math.cos(a),s=Math.sin(a);let t;
+  if(Math.abs(c)*hh>Math.abs(s)*hw)t=c?hw/Math.abs(c):1e9; else t=s?hh/Math.abs(s):1e9;
+  return [cx+c*t,cy+s*t];}
+function _explosion(){const cx=100,cy=84,hw=72,hh=66,n=32;let s='';
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n-Math.PI/2,b=_rectPt(cx,cy,hw,hh,a),f=(i%2===0)?1.12:0.9;
+    s+=(i===0?'M':'L')+(cx+(b[0]-cx)*f).toFixed(1)+' '+(cy+(b[1]-cy)*f).toFixed(1);}
+  return '<path d="'+s+'Z" fill="#fff" stroke="#111" stroke-width="2.6" stroke-linejoin="miter"/>';}
+function _electronic(){return '<path d="M100 14 L166 56 L150 118 L144 122 L144 158 L124 120 L48 112 L28 56 Z" '+_STR+'/>';}
+function _flash(){const cx=100,cy=84,rx=62,ry=66,n=130,rnd=_rng(1);let s='';
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n,p1=_pol(cx,cy,rx,ry,a,1.0+(rnd()*0.03-0.015)),p2=_pol(cx,cy,rx,ry,a,1.26+(rnd()*0.22-0.1));
+    s+='<line x1="'+p1[0].toFixed(1)+'" y1="'+p1[1].toFixed(1)+'" x2="'+p2[0].toFixed(1)+'" y2="'+p2[1].toFixed(1)+'" stroke="#111" stroke-width="1"/>';}
+  return s;}
+function _uniflash(){const cx=100,cy=85,rx=56,ry=70,n=150,rnd=_rng(4);let s='';
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n,r=(i%2===0)?(1.02+rnd()*0.16):(0.66+(rnd()*0.08-0.04)),p=_pol(cx,cy,rx,ry,a,r);
+    s+=(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1);}
+  return '<path d="'+s+'Z" fill="#111" stroke="#111" stroke-width="1" stroke-linejoin="miter"/>';}
+function balloonInner(type){
+  switch(type){
+    case 'normal': return _blobTail(()=>1);
+    case 'soft': return _rrectTail();
+    case 'whisper': return _blobTail(()=>1,'7 6');
+    case 'faint': return _blobTail(()=>1,'1 8');
+    case 'nervous': return _blobTail(a=>1+0.05*Math.sin(9*a));
+    case 'cheerful': return _blobTail(a=>1+0.05*Math.cos(15*a));
+    case 'friendly': return _cloud(false);
+    case 'handdraw': {const rnd=_rng(3); return _blobTail(()=>1+(rnd()*0.07-0.035));}
+    case 'shout': return _star(12,0.58);
+    case 'scream': return _star(10,0.46);
+    case 'excited': return _star(20,0.8,'round');
+    case 'electric': return _star(16,0.8);
+    case 'broadcast': return _broadcast();
+    case 'thought': return _cloud(true);
+    case 'angry': return _flame();
+    case 'poison': return _drip();
+    case 'fuzzy': return _fuzzy();
+    case 'narration': return '<path d="M8 18 H192 V126 H8 Z" '+_ST+'/>';
+    case 'doublebox': return '<path d="M8 16 H192 V128 H8 Z" '+_ST+'/><path d="M16 24 H184 V120 H16 Z" fill="none" stroke="#111" stroke-width="2"/>';
+    case 'roughbox': return _roughBox();
+    case 'system': return '<path d="M36 18 H164 L192 72 L164 126 H36 L8 72 Z" '+_ST+'/>';
+    case 'explosion': return _explosion();
+    case 'electronic': return _electronic();
+    case 'flash': return _flash();
+    case 'uniflash': return _uniflash();
+  }
+  return '';
+}
+function balloonSVG(type,fit){return '<svg class="balloon-svg" viewBox="0 0 200 170" preserveAspectRatio="'+(fit?'xMidYMid meet':'none')+'">'+balloonInner(type)+'</svg>';}
+
+function renderBalloons(){
+  const old=document.getElementById('balloonLayer'); if(old) old.remove();
+  const layer=el('div'); layer.id='balloonLayer'; layer.className='balloon-layer';
+  stage.appendChild(layer);
+  (state.balloons||[]).forEach((b)=>{
+    const wrap=el('div','balloon');
+    wrap.style.left=b.x+'px'; wrap.style.top=b.y+'px'; wrap.style.width=b.w+'px'; wrap.style.height=b.h+'px';
+    wrap.style.transform='rotate('+(b.rot||0)+'deg)';
+    wrap.innerHTML=balloonSVG(b.type);
+    if(b.flip){const sv=wrap.querySelector('.balloon-svg'); if(sv) sv.style.transform='scaleX(-1)';}
+    const tx=el('div','balloon-text'); tx.textContent=b.text||'';
+    const ins=_BOXTYPES.includes(b.type)?[13,9,15,9]:[8,17,29,17];
+    tx.style.cssText='top:'+ins[0]+'%;right:'+ins[1]+'%;bottom:'+ins[2]+'%;left:'+ins[3]+'%';
+    if(b.type==='uniflash') tx.style.color='#fff';
+    wrap.appendChild(tx);
+    const del=el('div','b-del'); del.textContent='×'; wrap.appendChild(del);
+    const rz=el('div','b-resize'); wrap.appendChild(rz);
+    const flip=el('div','b-flip'); flip.textContent='⇄'; flip.title='좌우 반전(꼬리 방향)'; wrap.appendChild(flip);
+    const rot=el('div','b-rot'); rot.title='드래그하여 회전'; wrap.appendChild(rot);
+
+    del.onclick=(e)=>{e.stopPropagation();pushHistory();const i=state.balloons.indexOf(b);if(i>-1)state.balloons.splice(i,1);renderBalloons();};
+    flip.onclick=(e)=>{e.stopPropagation();pushHistory();b.flip=!b.flip;renderBalloons();};
+    rot.onpointerdown=(e)=>{e.preventDefault();e.stopPropagation();pushHistory();
+      const rc=wrap.getBoundingClientRect(),cx=rc.left+rc.width/2,cy=rc.top+rc.height/2;
+      const mv=(ev)=>{b.rot=Math.round(Math.atan2(ev.clientY-cy,ev.clientX-cx)*180/Math.PI+90);wrap.style.transform='rotate('+b.rot+'deg)';};
+      const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
+      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);};
+    wrap.ondblclick=(e)=>{e.stopPropagation();tx.contentEditable='true';tx.focus();
+      const r=document.createRange();r.selectNodeContents(tx);const s=getSelection();s.removeAllRanges();s.addRange(r);};
+    tx.onblur=()=>{tx.contentEditable='false';b.text=tx.innerText.replace(/\n+$/,'');};
+    wrap.onpointerdown=(e)=>{
+      if(e.target===del||e.target===rz||e.target===flip||e.target===rot)return;
+      if(e.target===tx && tx.isContentEditable)return;   // 편집 중엔 이동 안 함
+      e.preventDefault(); pushHistory();
+      const sx=e.clientX,sy=e.clientY,x0=b.x,y0=b.y;
+      const mv=(ev)=>{b.x=x0+(ev.clientX-sx);b.y=y0+(ev.clientY-sy);wrap.style.left=b.x+'px';wrap.style.top=b.y+'px';};
+      const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
+      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+    };
+    rz.onpointerdown=(e)=>{
+      e.preventDefault();e.stopPropagation();pushHistory();
+      const sx=e.clientX,sy=e.clientY,w0=b.w,h0=b.h,rad=(b.rot||0)*Math.PI/180,cs=Math.cos(rad),sn=Math.sin(rad);
+      const mv=(ev)=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;   // 회전 축에 맞춰 로컬 크기 변경
+        b.w=Math.max(48,w0+(dx*cs+dy*sn)); b.h=Math.max(40,h0+(-dx*sn+dy*cs));
+        wrap.style.width=b.w+'px';wrap.style.height=b.h+'px';};
+      const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
+      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+    };
+    layer.appendChild(wrap);
+  });
+}
+function addBalloonAt(clientX,clientY,type){
+  pushHistory();
+  const r=stage.getBoundingClientRect(), w=178,h=152;
+  state.balloons.push({type,x:clientX-r.left-w/2,y:clientY-r.top-h/2,w,h,text:''});
+  renderBalloons();
+}
+function buildPalette(){
+  const g=document.getElementById('palGrid'); if(!g)return; g.innerHTML='';
+  BALLOON_GROUPS.forEach(([cat,list])=>{
+    const h=el('div','pal-cat'); h.textContent=cat; g.appendChild(h);
+    const row=el('div','pal-row');
+    list.forEach(([type,label])=>{
+      const it=el('div','pal-item'); it.draggable=true; it.title=label+' 말풍선을 컷 위로 드래그';
+      it.innerHTML='<div class="pal-ico">'+balloonSVG(type,true)+'</div><span>'+label+'</span>';
+      it.ondragstart=(e)=>{e.dataTransfer.setData('x-balloon',type);e.dataTransfer.effectAllowed='copy';};
+      row.appendChild(it);
+    });
+    g.appendChild(row);
+  });
+}
+
 /* ===== 폭 프리셋 ===== */
 function setStageWidth(v){stage.style.width=v+'px';}
 function onPreset(v){const cw=document.getElementById('customW'),u=document.getElementById('customUnit');
@@ -656,33 +868,4 @@ function exportPNG(){
   html2canvas(stage,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(canvas=>{
     stage.classList.remove('exporting');
     const a=document.createElement('a'); a.download='webtoon-layout.png';
-    a.href=canvas.toDataURL('image/png'); a.click();
-  }).catch(err=>{stage.classList.remove('exporting');alert('저장 중 오류: '+err);});
-}
-
-// 빈 영역/경계선 클릭 시 선택 해제
-stage.onclick=(e)=>{ if(e.target===stage||e.target.classList.contains('h-handle')||e.target.classList.contains('v-handle')){selectedNode=null;render();} };
-
-// 사용법 팝오버
-function toggleHelp(){const p=document.getElementById('helpPanel'); p.hidden=!p.hidden;}
-document.addEventListener('click',(e)=>{
-  const w=document.querySelector('.help-wrap'), p=document.getElementById('helpPanel');
-  if(p&&!p.hidden&&w&&!w.contains(e.target)) p.hidden=true;
-});
-
-// 단축키: Ctrl+Z 되돌리기, Ctrl+Shift+Z / Ctrl+Y 다시실행, 선택 컷 +/- 확대·축소
-document.addEventListener('keydown',(e)=>{
-  const inField=/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
-  const mod=e.ctrlKey||e.metaKey;
-  if(mod && (e.key==='z'||e.key==='Z')){ if(inField)return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
-  if(mod && (e.key==='y'||e.key==='Y')){ if(inField)return; e.preventDefault(); redo(); return; }
-  if(inField)return;
-  if(!selectedNode||!selectedNode.img)return;
-  if(e.key==='+'||e.key==='='){ pushHistory(); selectedNode.scale=Math.min(10,(selectedNode.scale||1)*1.1); e.preventDefault(); render(); }
-  else if(e.key==='-'||e.key==='_'){ pushHistory(); selectedNode.scale=Math.max(0.1,(selectedNode.scale||1)/1.1); e.preventDefault(); render(); }
-});
-
-render();
-</script>
-</body>
-</html>
+    a.href=canvas.toDataURL('image/png'); a.cl
