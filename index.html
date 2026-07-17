@@ -104,17 +104,33 @@
   .balloon-text{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;
     font-size:14px;font-weight:700;color:#111;line-height:1.25;overflow:hidden;word-break:break-word;outline:none}
   .balloon-text:empty::before{content:'더블클릭 입력';color:#c3c3d6;font-weight:500}
+  /* 선택 표시용 프레임 */
+  .balloon .b-frame{position:absolute;inset:0;border:1.5px solid var(--accent);border-radius:4px;pointer-events:none;display:none;z-index:2}
   .balloon .b-del{position:absolute;top:-9px;right:-9px;width:20px;height:20px;border-radius:50%;
-    background:#e0466b;color:#fff;font-size:13px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:3}
-  .balloon .b-resize{position:absolute;right:-6px;bottom:-6px;width:14px;height:14px;border-radius:50%;
-    background:var(--accent);border:2px solid #fff;cursor:nwse-resize;display:none;z-index:3}
+    background:#e0466b;color:#fff;font-size:13px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:5}
   .balloon .b-flip{position:absolute;top:-9px;right:16px;width:20px;height:20px;border-radius:50%;
-    background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:3}
-  .balloon .b-rot{position:absolute;top:-28px;left:50%;width:15px;height:15px;margin-left:-7.5px;border-radius:50%;
-    background:#22c1a4;border:2px solid #fff;cursor:grab;display:none;z-index:3}
-  .balloon .b-rot::before{content:"";position:absolute;top:13px;left:50%;width:2px;height:13px;background:#22c1a4;transform:translateX(-50%)}
-  .balloon:hover .b-del,.balloon:hover .b-resize,.balloon:hover .b-flip,.balloon:hover .b-rot{display:block}
-  .exporting .b-del,.exporting .b-resize,.exporting .b-flip,.exporting .b-rot{display:none!important}
+    background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center;cursor:pointer;display:none;z-index:5}
+  .balloon .b-rot{position:absolute;top:-36px;left:50%;width:24px;height:24px;margin-left:-12px;border-radius:50%;
+    background:#22c1a4;border:2px solid #fff;cursor:grab;display:none;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.35);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M21 12a9 9 0 1 1-3-6.7'/><path d='M21 3v5h-5'/></svg>");
+    background-size:15px 15px;background-position:center;background-repeat:no-repeat}
+  .balloon .b-rot:active{cursor:grabbing}
+  .balloon .b-rot::before{content:"";position:absolute;top:22px;left:50%;width:2px;height:14px;background:#22c1a4;transform:translateX(-50%)}
+  /* 8방향 크기조절 핸들 (모서리=사각형, 변=알약) */
+  .balloon .b-h{position:absolute;background:#fff;border:2px solid var(--accent);display:none;z-index:4;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .balloon .bh-nw,.balloon .bh-ne,.balloon .bh-se,.balloon .bh-sw{width:13px;height:13px;border-radius:3px}
+  .balloon .bh-nw{top:-7px;left:-7px;cursor:nwse-resize}
+  .balloon .bh-ne{top:-7px;right:-7px;cursor:nesw-resize}
+  .balloon .bh-se{bottom:-7px;right:-7px;cursor:nwse-resize}
+  .balloon .bh-sw{bottom:-7px;left:-7px;cursor:nesw-resize}
+  .balloon .bh-n{top:-7px;left:50%;margin-left:-11px;width:22px;height:11px;border-radius:6px;cursor:ns-resize}
+  .balloon .bh-s{bottom:-7px;left:50%;margin-left:-11px;width:22px;height:11px;border-radius:6px;cursor:ns-resize}
+  .balloon .bh-e{right:-7px;top:50%;margin-top:-11px;width:11px;height:22px;border-radius:6px;cursor:ew-resize}
+  .balloon .bh-w{left:-7px;top:50%;margin-top:-11px;width:11px;height:22px;border-radius:6px;cursor:ew-resize}
+  .balloon:hover .b-del,.balloon:hover .b-flip,.balloon:hover .b-rot,.balloon:hover .b-h,
+  .balloon.selected .b-del,.balloon.selected .b-flip,.balloon.selected .b-rot,.balloon.selected .b-h,
+  .balloon.selected .b-frame{display:block}
+  .exporting .b-del,.exporting .b-flip,.exporting .b-rot,.exporting .b-h,.exporting .b-frame{display:none!important}
   .exporting .balloon-text:empty::before{content:''}
   #stage{background:var(--panel);width:690px;box-shadow:0 4px 24px rgba(0,0,0,.08);
     display:flex;flex-direction:column;align-self:flex-start;position:relative}
@@ -249,7 +265,7 @@
     </dl>
     <div class="side-foot">완성되면 우측 상단 <b>PNG 저장</b>으로 한 장 이미지로 내보내세요.</div>
     <div class="credit">
-      <div class="credit-row"><span class="credit-by">by <b>kanton7</b></span><span class="ver">ver. 0.12</span></div>
+      <div class="credit-row"><span class="credit-by">by <b>kanton7</b></span><span class="ver">ver. 0.13</span></div>
       <a class="credit-mail" href="mailto:kanton7@naver.com">✉ kanton7@naver.com</a>
     </div>
   </aside>
@@ -258,7 +274,7 @@
   </div>
   <aside class="palette">
     <div class="side-head"><span>💬</span> 말풍선</div>
-    <div class="pal-tip">아이콘을 컷 위로 <b>드래그</b>해 배치하고, 말풍선을 <b>더블클릭</b>해 글자를 입력하세요.</div>
+    <div class="pal-tip">아이콘을 컷 위로 <b>드래그</b>해 배치하고, 말풍선을 <b>더블클릭</b>해 글자를 입력하세요.<br>말풍선을 클릭하면 <b>8방향 핸들</b>로 크기조절, 위쪽 <b>초록 핸들</b>로 회전(<kbd>Shift</kbd> 15°)할 수 있어요.</div>
     <div class="pal-grid" id="palGrid"></div>
   </aside>
 </div>
@@ -289,6 +305,7 @@ let pendingUpload=null;   // leaf 참조
 let dragSrc=null;         // {node,parent,index}
 let justDragged=false;
 let selectedNode=null;    // 선택된 컷(꼭짓점 표시)
+let selectedBalloon=null; // 선택된 말풍선(핸들 표시)
 let cornerDragging=false; // 사선 꼭짓점 드래그 중
 
 const el=(tag,cls)=>{const e=document.createElement(tag);if(cls)e.className=cls;return e;};
@@ -298,7 +315,7 @@ const topHeight=()=>state.root.kids.reduce((s,k)=>s+k.w,0);
 let undoStack=[], redoStack=[], histLimit=5;
 const snap=()=>JSON.parse(JSON.stringify({root:state.root,gap:state.gap,border:state.border,balloons:state.balloons}));
 function pushHistory(){ undoStack.push(snap()); while(undoStack.length>histLimit) undoStack.shift(); redoStack=[]; updateUndoUI(); }
-function restore(s){ state.root=s.root; state.gap=s.gap; state.border=s.border; state.balloons=s.balloons||[]; selectedNode=null; render(); syncInputs(); }
+function restore(s){ state.root=s.root; state.gap=s.gap; state.border=s.border; state.balloons=s.balloons||[]; selectedNode=null; selectedBalloon=null; render(); syncInputs(); }
 function undo(){ if(!undoStack.length)return; redoStack.push(snap()); restore(undoStack.pop()); updateUndoUI(); }
 function redo(){ if(!redoStack.length)return; undoStack.push(snap()); restore(redoStack.pop()); updateUndoUI(); }
 function setHistLimit(v){ histLimit=Math.max(1,Math.min(100,+v||1)); while(undoStack.length>histLimit) undoStack.shift(); updateUndoUI(); }
@@ -799,36 +816,37 @@ function renderBalloons(){
     tx.style.cssText='top:'+ins[0]+'%;right:'+ins[1]+'%;bottom:'+ins[2]+'%;left:'+ins[3]+'%';
     if(b.type==='uniflash') tx.style.color='#fff';
     wrap.appendChild(tx);
-    const del=el('div','b-del'); del.textContent='×'; wrap.appendChild(del);
-    const rz=el('div','b-resize'); wrap.appendChild(rz);
+    if(b===selectedBalloon) wrap.classList.add('selected');
+    const frame=el('div','b-frame'); wrap.appendChild(frame);
+    const del=el('div','b-del'); del.textContent='×'; del.title='삭제'; wrap.appendChild(del);
     const flip=el('div','b-flip'); flip.textContent='⇄'; flip.title='좌우 반전(꼬리 방향)'; wrap.appendChild(flip);
-    const rot=el('div','b-rot'); rot.title='드래그하여 회전'; wrap.appendChild(rot);
+    const rot=el('div','b-rot'); rot.title='드래그하여 회전 (Shift=15° 단위)'; wrap.appendChild(rot);
+    // 8방향 크기조절 핸들
+    ['nw','ne','se','sw','n','s','e','w'].forEach(dir=>{
+      const hnd=el('div','b-h bh-'+dir);
+      hnd.onpointerdown=(e)=>startBalloonResize(e,b,wrap,dir);
+      wrap.appendChild(hnd);
+    });
 
-    del.onclick=(e)=>{e.stopPropagation();pushHistory();const i=state.balloons.indexOf(b);if(i>-1)state.balloons.splice(i,1);renderBalloons();};
+    del.onclick=(e)=>{e.stopPropagation();pushHistory();const i=state.balloons.indexOf(b);if(i>-1)state.balloons.splice(i,1);if(selectedBalloon===b)selectedBalloon=null;renderBalloons();};
     flip.onclick=(e)=>{e.stopPropagation();pushHistory();b.flip=!b.flip;renderBalloons();};
-    rot.onpointerdown=(e)=>{e.preventDefault();e.stopPropagation();pushHistory();
+    rot.onpointerdown=(e)=>{e.preventDefault();e.stopPropagation();pushHistory();selectBalloon(b,wrap);
       const rc=wrap.getBoundingClientRect(),cx=rc.left+rc.width/2,cy=rc.top+rc.height/2;
-      const mv=(ev)=>{b.rot=Math.round(Math.atan2(ev.clientY-cy,ev.clientX-cx)*180/Math.PI+90);wrap.style.transform='rotate('+b.rot+'deg)';};
+      const mv=(ev)=>{let a=Math.atan2(ev.clientY-cy,ev.clientX-cx)*180/Math.PI+90;
+        if(ev.shiftKey)a=Math.round(a/15)*15; b.rot=Math.round(((a%360)+360)%360);
+        wrap.style.transform='rotate('+b.rot+'deg)';};
       const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
       document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);};
     wrap.ondblclick=(e)=>{e.stopPropagation();tx.contentEditable='true';tx.focus();
       const r=document.createRange();r.selectNodeContents(tx);const s=getSelection();s.removeAllRanges();s.addRange(r);};
     tx.onblur=()=>{tx.contentEditable='false';b.text=tx.innerText.replace(/\n+$/,'');};
     wrap.onpointerdown=(e)=>{
-      if(e.target===del||e.target===rz||e.target===flip||e.target===rot)return;
+      if(e.target.closest('.b-del,.b-flip,.b-rot,.b-h'))return;
       if(e.target===tx && tx.isContentEditable)return;   // 편집 중엔 이동 안 함
-      e.preventDefault(); pushHistory();
-      const sx=e.clientX,sy=e.clientY,x0=b.x,y0=b.y;
-      const mv=(ev)=>{b.x=x0+(ev.clientX-sx);b.y=y0+(ev.clientY-sy);wrap.style.left=b.x+'px';wrap.style.top=b.y+'px';};
-      const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
-      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
-    };
-    rz.onpointerdown=(e)=>{
-      e.preventDefault();e.stopPropagation();pushHistory();
-      const sx=e.clientX,sy=e.clientY,w0=b.w,h0=b.h,rad=(b.rot||0)*Math.PI/180,cs=Math.cos(rad),sn=Math.sin(rad);
-      const mv=(ev)=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;   // 회전 축에 맞춰 로컬 크기 변경
-        b.w=Math.max(48,w0+(dx*cs+dy*sn)); b.h=Math.max(40,h0+(-dx*sn+dy*cs));
-        wrap.style.width=b.w+'px';wrap.style.height=b.h+'px';};
+      e.preventDefault(); selectBalloon(b,wrap);
+      const sx=e.clientX,sy=e.clientY,x0=b.x,y0=b.y; let hist=false;
+      const mv=(ev)=>{ if(!hist){pushHistory();hist=true;}
+        b.x=x0+(ev.clientX-sx);b.y=y0+(ev.clientY-sy);wrap.style.left=b.x+'px';wrap.style.top=b.y+'px';};
       const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
       document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
     };
@@ -838,8 +856,44 @@ function renderBalloons(){
 function addBalloonAt(clientX,clientY,type){
   pushHistory();
   const r=stage.getBoundingClientRect(), w=178,h=152;
-  state.balloons.push({type,x:clientX-r.left-w/2,y:clientY-r.top-h/2,w,h,text:''});
+  const nb={type,x:clientX-r.left-w/2,y:clientY-r.top-h/2,w,h,text:''};
+  state.balloons.push(nb);
+  selectedBalloon=nb;              // 새로 놓은 말풍선은 바로 선택 상태
   renderBalloons();
+}
+
+/* ===== 말풍선 선택 ===== */
+function selectBalloon(b,wrap){
+  selectedBalloon=b;
+  document.querySelectorAll('.balloon.selected').forEach(w=>{ if(w!==wrap) w.classList.remove('selected'); });
+  if(wrap) wrap.classList.add('selected');
+}
+
+/* ===== 말풍선 크기조절 (8방향 · 회전 반영 · 반대편 고정) ===== */
+function startBalloonResize(e,b,wrap,dir){
+  e.preventDefault(); e.stopPropagation(); selectBalloon(b,wrap);
+  const R=(x,y,deg)=>{const a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return{x:x*c-y*s,y:x*s+y*c};};
+  const Ri=(x,y,deg)=>R(x,y,-deg);
+  const rot=b.rot||0, MINW=48, MINH=40;
+  const sx=dir.includes('e')?1:dir.includes('w')?-1:0;   // 로컬 x 방향
+  const sy=dir.includes('s')?1:dir.includes('n')?-1:0;   // 로컬 y 방향
+  const cx0=b.x+b.w/2, cy0=b.y+b.h/2;
+  const aw=R(-sx*b.w/2,-sy*b.h/2,rot);                   // 반대편(고정) 지점
+  const anchor={x:cx0+aw.x, y:cy0+aw.y};
+  const sr=stage.getBoundingClientRect();
+  let hist=false;
+  const mv=(ev)=>{ if(!hist){pushHistory();hist=true;}
+    const mx=ev.clientX-sr.left, my=ev.clientY-sr.top;
+    const d=Ri(mx-anchor.x, my-anchor.y, rot);           // 앵커→마우스 (로컬 축)
+    let nw=b.w, nh=b.h;
+    if(sx!==0) nw=Math.max(MINW,Math.abs(d.x));
+    if(sy!==0) nh=Math.max(MINH,Math.abs(d.y));
+    const off=R(sx!==0?sx*nw/2:0, sy!==0?sy*nh/2:0, rot);
+    b.w=nw; b.h=nh; b.x=anchor.x+off.x-nw/2; b.y=anchor.y+off.y-nh/2;
+    wrap.style.left=b.x+'px'; wrap.style.top=b.y+'px'; wrap.style.width=nw+'px'; wrap.style.height=nh+'px';
+  };
+  const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
+  document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up);
 }
 function buildPalette(){
   const g=document.getElementById('palGrid'); if(!g)return; g.innerHTML='';
@@ -890,6 +944,12 @@ document.addEventListener('keydown',(e)=>{
 /* ===== 빈 곳 클릭 시 선택 해제 ===== */
 document.querySelector('.stage-wrap').addEventListener('pointerdown',(e)=>{
   if(e.target.classList.contains('stage-wrap') && selectedNode){ selectedNode=null; render(); }
+});
+/* 말풍선 밖(빈 곳·컷·툴바 등)을 누르면 말풍선 선택 해제 */
+document.addEventListener('pointerdown',(e)=>{
+  if(e.target.closest('.balloon')) return;
+  if(selectedBalloon){ selectedBalloon=null;
+    document.querySelectorAll('.balloon.selected').forEach(w=>w.classList.remove('selected')); }
 });
 
 /* ===== 초기화 ===== */
