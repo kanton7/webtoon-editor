@@ -82,28 +82,36 @@
 
   /* ===== 말풍선 팔레트 (우측) ===== */
   .palette{width:190px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);
-    padding:16px 14px 18px;overflow-y:auto}
+    display:flex;flex-direction:column;overflow:hidden}
+  .pal-scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 14px 10px}
+  .pal-fixed{flex:none;border-top:1px solid var(--line);background:var(--panel);padding:10px 14px 14px;max-height:56%;overflow-y:auto}
   .pal-tip{font-size:11px;line-height:1.5;color:var(--muted);margin-bottom:12px}
   .pal-tip b{color:var(--accent)}
   .pal-grid{display:flex;flex-direction:column}
   .pal-cat{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin:12px 0 6px}
   .pal-cat:first-child{margin-top:0}
   .pal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .pal-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;
+  .pal-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;
     border:1px solid var(--line);border-radius:11px;background:var(--soft);cursor:grab;transition:.14s}
   .pal-item:hover{border-color:var(--accent);background:#fff;box-shadow:0 3px 10px rgba(91,108,255,.12);transform:translateY(-1px)}
   .pal-item:active{cursor:grabbing}
   .pal-ico{width:100%;height:42px;pointer-events:none}
   .pal-ico svg{width:100%;height:100%}
+  .pal-fav{position:absolute;top:2px;right:3px;font-size:12px;line-height:1;cursor:pointer;color:#c9cdd8;background:transparent;border:0;padding:2px;z-index:2}
+  .pal-fav.on,.pal-fav:hover{color:#f5b301}
+  #vertBtn.on,.txt-tgl.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
   .pal-item span{font-size:10.5px;font-weight:600;color:var(--text)}
 
   /* ===== 배치된 말풍선 ===== */
   .balloon-layer{position:absolute;inset:0;pointer-events:none;z-index:15}
   .balloon{position:absolute;pointer-events:auto;cursor:move}
   .balloon .balloon-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-  .balloon-text{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;
-    font-size:14px;font-weight:700;color:#111;line-height:1.25;overflow:hidden;word-break:break-word;outline:none}
-  .balloon-text:empty::before{content:'더블클릭 입력';color:#c3c3d6;font-weight:500}
+  .balloon-text{position:absolute;display:flex;align-items:center;justify-content:center;overflow:visible}
+  .bt-inner{max-width:100%;max-height:100%;overflow:hidden;text-align:center;
+    font-size:14px;font-weight:400;color:#111;line-height:1.25;word-break:break-word;outline:none}
+  .bt-inner b,.bt-inner strong{font-weight:800}
+  .bt-inner:empty::before{content:'더블클릭 입력';color:#c3c3d6;font-weight:500}
+  .balloon.selected .bt-inner{cursor:move}
   /* 선택 표시용 프레임 */
   .balloon .b-frame{position:absolute;inset:0;border:1.5px solid var(--accent);border-radius:4px;pointer-events:none;display:none;z-index:2}
   .balloon .b-del{position:absolute;top:-9px;right:-9px;width:20px;height:20px;border-radius:50%;
@@ -137,7 +145,7 @@
   .balloon.selected .b-del,.balloon.selected .b-flip,.balloon.selected .b-rot,.balloon.selected .b-h,.balloon.selected .b-tail,.balloon.selected .b-tail-base,
   .balloon.selected .b-frame{display:block}
   .exporting .b-del,.exporting .b-flip,.exporting .b-rot,.exporting .b-h,.exporting .b-tail,.exporting .b-tail-base,.exporting .b-frame{display:none!important}
-  .exporting .balloon-text:empty::before{content:''}
+  .exporting .bt-inner:empty::before{content:''}
   #stage{background:var(--panel);width:690px;box-shadow:0 4px 24px rgba(0,0,0,.08);
     display:flex;flex-direction:column;align-self:flex-start;position:relative}
 
@@ -208,6 +216,16 @@
   .exporting .h-handle::after,.exporting .v-handle::after{opacity:0!important;display:none!important}
   .exporting .cut.selected{outline:none!important}
 
+  /* ===== 도움말 팝업 ===== */
+  .modal-back{position:fixed;inset:0;background:rgba(25,25,50,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .modal-back.open{display:flex}
+  .modal{position:relative;background:#fff;border-radius:16px;max-width:460px;width:100%;max-height:82vh;overflow:auto;padding:26px 28px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+  .modal h3{margin:0 0 6px;font-size:19px}
+  .modal h4{margin:15px 0 3px;font-size:13px;color:var(--accent);font-weight:800}
+  .modal p{margin:0;font-size:13px;line-height:1.65;color:var(--text)}
+  .modal .modal-x{position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:17px;cursor:pointer;line-height:1;padding:0}
+  .modal .modal-x:hover{color:var(--accent);border-color:var(--accent)}
+  .modal kbd{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px}
   /* ===== 좌측 상단 탭(보관함/사용법) ===== */
   .side-tabs{display:flex;gap:6px;margin-bottom:12px}
   .side-tab{flex:1;font-size:12.5px;font-weight:800;padding:8px 6px;border:1px solid var(--line);border-radius:9px;
@@ -347,7 +365,7 @@
     <div class="side-foot">완성되면 <b>PNG 저장</b>, <b>💾 페이지 저장</b>으로 다음에 이어서 작업할 수 있어요.</div>
     </div><!-- /panelGuide -->
     <div class="credit">
-      <div class="credit-row"><span class="credit-by">by <b>kanton7</b></span><span class="ver">ver. 0.28</span></div>
+      <div class="credit-row"><span class="credit-by">by <b>kanton7</b></span><span class="ver">ver. 0.40</span></div>
       <a class="credit-mail" href="mailto:kanton7@naver.com">✉ kanton7@naver.com</a>
     </div>
   </aside>
@@ -355,11 +373,16 @@
     <div id="stage"></div>
   </div>
   <aside class="palette">
-    <div class="side-head"><span>💬</span> 말풍선</div>
-    <div class="pal-tip">아이콘을 컷 위로 <b>드래그</b>해 배치하고, 말풍선을 <b>더블클릭</b>해 글자를 입력하세요.<br>말풍선을 클릭하면 <b>8방향 핸들</b>로 크기조절, 위쪽 <b>초록 핸들</b>로 회전(<kbd>Shift</kbd> 15°)할 수 있어요.</div>
-    <button id="drawEllipseBtn" class="primary" style="width:100%;justify-content:center;margin-bottom:12px" onclick="startDrawEllipse()"><span>✏️</span> 말풍선 직접 그리기</button>
-    <div class="pal-tip" style="margin-top:-4px">① 캔버스에 <b>드래그</b>해 타원 크기를 그리고<br>② <b>꼬리 끝</b>을 클릭하면 그 방향으로 꼬리가 생겨요. (<kbd>Esc</kbd>=꼬리 없이/취소)<br>생성 후 <b style="color:#ff7a59">채운 주황 핸들</b>=꼬리 끝, <b style="color:#ff7a59">빈 주황 핸들</b>=꼬리 시작점을 드래그해 조절해요. 끝 핸들 더블클릭 시 꼬리 제거.</div>
-    <div id="strokeCtl" style="padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin-bottom:8px">
+    <div class="pal-scroll">
+    <div class="side-head" style="display:flex;align-items:center;justify-content:space-between">
+      <span><span>💬</span> 말풍선</span>
+      <button id="helpBtn" onclick="openHelp()" title="사용법 도움말" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--accent);font-weight:900;font-size:13px;cursor:pointer;line-height:1;flex:none;padding:0">?</button>
+    </div>
+    <button id="drawEllipseBtn" class="primary" style="width:100%;justify-content:center;margin:10px 0 10px" onclick="startDrawEllipse()"><span>✏️</span> 말풍선 직접 그리기</button>
+    <div class="pal-grid" id="palGrid"></div>
+    </div><!-- /pal-scroll -->
+    <div class="pal-fixed">
+    <div id="strokeCtl" style="padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin:0 0 8px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
         <span style="font-size:11.5px;font-weight:700;color:var(--text)">테두리 굵기</span>
         <span style="display:inline-flex;align-items:center;gap:3px">
@@ -375,8 +398,50 @@
         <button class="icon" style="padding:3px 9px;font-size:15px" onclick="stepBalloonStrokePx(0.5)" title="굵게 (+ 키)">＋</button>
       </div>
     </div>
-    <div class="pal-tip">말풍선을 <b>선택</b>하고 <b>px 값 입력</b>·슬라이더·<kbd>−</kbd><kbd>＋</kbd> 버튼이나 키보드 <kbd>+</kbd><kbd>−</kbd> 키로 조절해요. 선택 없이 조절하면 <b>새 말풍선 기본값</b>이 돼요.</div>
-    <div class="pal-grid" id="palGrid"></div>
+    <div id="fontCtl" style="padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+        <span style="font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap">글꼴</span>
+        <select id="balloonFontSel" onchange="setBalloonFont(this.value)"
+          style="flex:1;min-width:0;font-size:12px;font-weight:700;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--text)">
+          <option value="">기본</option>
+          <option value="'Malgun Gothic','맑은 고딕',sans-serif">고딕 (맑은고딕)</option>
+          <option value="'Gulim','굴림',sans-serif">굴림</option>
+          <option value="'Dotum','돋움',sans-serif">돋움</option>
+          <option value="'Batang','바탕',serif">바탕 (명조)</option>
+          <option value="'Gungsuh','궁서',serif">궁서 (붓글씨)</option>
+          <option value="'Comic Sans MS','Nanum Pen Script',cursive">손글씨</option>
+        </select>
+        <button id="favFontBtn" class="icon" onclick="toggleFavFont()" title="현재 글꼴 즐겨찾기 추가/제거" style="padding:3px 7px;font-size:13px;flex:none">☆</button>
+      </div>
+      <button id="loadFontsBtn" onclick="loadSystemFonts()" style="width:100%;justify-content:center;margin-bottom:7px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer;font-weight:700">🖥 내 컴퓨터 글꼴 불러오기</button>
+      <input id="balloonFontText" type="text" placeholder="글꼴 이름 직접 입력 (예: 나눔고딕)" onchange="setBalloonFontText(this.value)"
+        style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;box-sizing:border-box;background:#fff;color:var(--text)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <span style="font-size:11.5px;font-weight:700;color:var(--text)">글자 크기</span>
+        <span style="display:inline-flex;align-items:center;gap:3px">
+          <input type="number" id="balloonFontPx" min="8" max="48" step="1" value="14"
+            style="width:52px;font-size:12px;font-weight:700;padding:3px 5px;border:1px solid var(--line);border-radius:6px;text-align:right;background:#fff;color:var(--text)"
+            onchange="setBalloonFontPx(this.value)">
+          <span class="unit" style="font-size:11px">px</span>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="icon" style="padding:3px 9px;font-size:15px" id="fontMinusBtn" onclick="stepBalloonFontPx(-1)" title="작게">−</button>
+        <input type="range" id="balloonFontRange" min="8" max="48" step="1" value="14" style="flex:1;min-width:0" onchange="setBalloonFontPx(this.value)">
+        <button class="icon" style="padding:3px 9px;font-size:15px" id="fontPlusBtn" onclick="stepBalloonFontPx(1)" title="크게">＋</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:9px">
+        <button id="boldBtn" class="txt-tgl" onclick="toggleBold()" title="굵게" style="flex:1;font-size:13px;font-weight:900;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer">B</button>
+        <button id="italicBtn" class="txt-tgl" onclick="toggleItalic()" title="이탤릭" style="flex:1;font-size:13px;font-style:italic;font-weight:800;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer">I</button>
+        <button id="underlineBtn" class="txt-tgl" onclick="toggleUnderline()" title="밑줄" style="flex:1;font-size:13px;font-weight:800;text-decoration:underline;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer">U</button>
+        <button id="strikeBtn" class="txt-tgl" onclick="toggleStrike()" title="취소선(빗금)" style="flex:1;font-size:13px;font-weight:800;text-decoration:line-through;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer">S</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:7px">
+        <button id="vertBtn" onclick="toggleBalloonVertical()" title="글자를 세로로 쓰기 (켜기/끄기)" style="flex:1;justify-content:center;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer;font-weight:700">↕ 세로쓰기</button>
+        <button id="centerTextBtn" onclick="resetTextPos()" title="옮긴 글자를 다시 가운데로" style="flex:1;justify-content:center;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);cursor:pointer;font-weight:700">⊹ 글자 가운데</button>
+      </div>
+    </div>
+    </div><!-- /pal-fixed -->
   </aside>
 </div>
 
@@ -384,6 +449,23 @@
 <input type="file" id="libFolder" webkitdirectory directory multiple style="display:none">
 <input type="file" id="libFiles" accept="image/*" multiple style="display:none">
 <input type="file" id="projFile" accept=".json,application/json" style="display:none">
+
+<div id="helpModal" class="modal-back">
+  <div class="modal">
+    <button class="modal-x" onclick="closeHelp()" title="닫기">×</button>
+    <h3>💬 말풍선 사용법</h3>
+    <h4>배치하기</h4>
+    <p>오른쪽 아이콘을 컷 위로 <b>드래그</b>하거나 <b>더블클릭</b>하면 화면에 추가돼요. 아이콘 우측 위 <b>☆</b>로 자주 쓰는 말풍선을 즐겨찾기에 넣을 수 있어요.</p>
+    <h4>글자 입력·크기·회전</h4>
+    <p>배치된 말풍선을 <b>더블클릭</b>하면 글자를 입력해요. 클릭하면 <b>8방향 핸들</b>로 크기조절, 위쪽 <b>초록 핸들</b>로 회전(<kbd>Shift</kbd>=15° 단위), <b>⇄</b>로 좌우 반전이 됩니다.</p>
+    <h4>말풍선 직접 그리기</h4>
+    <p>① <b>말풍선 직접 그리기</b>를 누르고 캔버스에 <b>드래그</b>해 타원을 그려요.<br>② <b>꼬리 끝</b>을 클릭하면 그 방향으로 꼬리가 생겨요(<kbd>Esc</kbd>=꼬리 없이/취소). 생성 후 <b style="color:#ff7a59">채운 주황 핸들</b>=꼬리 끝, <b style="color:#ff7a59">빈 주황 핸들</b>=꼬리 시작점을 드래그해 조절하고, 끝 핸들 더블클릭으로 꼬리를 없애요.</p>
+    <h4>글꼴·서식 (선택 글자만)</h4>
+    <p>말풍선을 <b>선택</b>하면 글꼴·글자 크기·테두리 굵기·세로쓰기를 바꿔요. 편집 중 <b>글자를 드래그해 선택</b>한 뒤 <b>B</b>(굵게)·<b>I</b>(이탤릭)·<b>U</b>(밑줄)·<b>S</b>(취소선)나 글자 크기를 조절하면 <b>그 글자에만</b> 적용돼요. 선택 없이 조절하면 새 말풍선 기본값이 됩니다. 테두리 굵기는 키보드 <kbd>+</kbd><kbd>−</kbd> 로도 조절돼요.</p>
+    <h4>글자 위치</h4>
+    <p>말풍선 선택 후 <b>글자를 드래그</b>하거나 <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd>(Shift=크게)로 위치를 옮기고, <b>⊹ 글자 가운데</b>로 다시 중앙에 맞춰요.</p>
+  </div>
+</div>
 
 <script>
 /* ===== 데이터 모델 (재귀 트리) =====
@@ -411,6 +493,12 @@ let justDragged=false;
 let selectedNode=null;    // 선택된 컷(꼭짓점 표시)
 let selectedBalloon=null; // 선택된 말풍선(핸들 표시)
 let balloonStroke=1;      // 새 말풍선 기본 테두리 굵기(배수)
+let balloonFont='';       // 새 말풍선 기본 글꼴(빈 값=앱 기본)
+let balloonFontPx=14;     // 새 말풍선 기본 글자 크기(px)
+let favFonts=[];          // 글꼴 즐겨찾기 [{value,label}]
+let savedRange=null, savedRangeEl=null;   // 편집 중 선택 영역(부분 서식·부분 크기용)
+let balloonVertical=false; // 새 말풍선 기본 세로쓰기 여부
+let balloonBold=false, balloonItalic=false, balloonUnderline=false; // 새 말풍선 기본 글자 스타일
 let libraryImages=[];     // 좌측 보관함 이미지 {name,src}
 let cornerDragging=false; // 사선 꼭짓점 드래그 중
 
@@ -864,7 +952,7 @@ function _fuzzy(){const cx=100,cy=62,rx=82,ry=46,n=90,rnd=_rng(7);let s='';
 function _roughBox(){const rnd=_rng(11),c=[[10,18],[192,16],[190,126],[8,128],[10,18]];let d='M';
   for(let k=0;k<4;k++){const a=c[k],b=c[k+1];d+=a[0].toFixed(0)+' '+a[1].toFixed(0)+' ';
     for(const t of [0.33,0.66]){const x=a[0]+(b[0]-a[0])*t+(rnd()*8-4),y=a[1]+(b[1]-a[1])*t+(rnd()*8-4);d+='L'+x.toFixed(0)+' '+y.toFixed(0)+' ';}d+='L';}
-  return '<path d="'+d.slice(0,-1)+'Z" '+_STR+'/>';}
+  return '<path d="'+d.slice(0,-1)+'Z" '+_STR+' vector-effect="non-scaling-stroke"/>';}
 function _broadcast(){return '<path d="'+_starD(14,0.74)+'" '+_ST+'/><path d="'+_starD(14,0.74,76,42)+'" fill="none" stroke="#111" stroke-width="2.2"/>';}
 function _rectPt(cx,cy,hw,hh,a){const c=Math.cos(a),s=Math.sin(a);let t;
   if(Math.abs(c)*hh>Math.abs(s)*hw)t=c?hw/Math.abs(c):1e9; else t=s?hh/Math.abs(s):1e9;
@@ -901,10 +989,10 @@ function balloonInner(type){
     case 'angry': return _flame();
     case 'poison': return _drip();
     case 'fuzzy': return _fuzzy();
-    case 'narration': return '<path d="M8 18 H192 V126 H8 Z" '+_ST+'/>';
-    case 'doublebox': return '<path d="M8 16 H192 V128 H8 Z" '+_ST+'/><path d="M16 24 H184 V120 H16 Z" fill="none" stroke="#111" stroke-width="2"/>';
+    case 'narration': return '<path d="M8 18 H192 V126 H8 Z" '+_ST+' vector-effect="non-scaling-stroke"/>';
+    case 'doublebox': return '<path d="M8 16 H192 V128 H8 Z" '+_ST+' vector-effect="non-scaling-stroke"/><path d="M16 24 H184 V120 H16 Z" fill="none" stroke="#111" stroke-width="2" vector-effect="non-scaling-stroke"/>';
     case 'roughbox': return _roughBox();
-    case 'system': return '<path d="M36 18 H164 L192 72 L164 126 H36 L8 72 Z" '+_ST+'/>';
+    case 'system': return '<path d="M36 18 H164 L192 72 L164 126 H36 L8 72 Z" '+_ST+' vector-effect="non-scaling-stroke"/>';
     case 'explosion': return _explosion();
     case 'electronic': return _electronic();
     case 'flash': return _flash();
@@ -914,6 +1002,7 @@ function balloonInner(type){
 }
 function balloonSVG(type,fit){return '<svg class="balloon-svg" viewBox="0 0 200 170" preserveAspectRatio="'+(fit?'xMidYMid meet':'none')+'">'+balloonInner(type)+'</svg>';}
 
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function renderBalloons(){
   const old=document.getElementById('balloonLayer'); if(old) old.remove();
   const layer=el('div'); layer.id='balloonLayer'; layer.className='balloon-layer';
@@ -928,10 +1017,20 @@ function renderBalloons(){
       wrap.querySelectorAll('.balloon-svg [stroke-width]').forEach(elm=>{
         elm.setAttribute('stroke-width',(parseFloat(elm.getAttribute('stroke-width'))*b.stroke).toFixed(2));});
     }
-    const tx=el('div','balloon-text'); tx.textContent=b.text||'';
-    const ins=(b.type==='draw-ellipse')?[16,16,16,16]:(_BOXTYPES.includes(b.type)?[13,9,15,9]:[8,17,29,17]);
+    const tx=el('div','balloon-text');
+    const ins=(b.type==='draw-ellipse')?[16,16,16,16]:(_BOXTYPES.includes(b.type)?[13,9,28,9]:[8,17,29,17]);   // 박스: 실제 박스 중심(≈42%)에 맞춤
     tx.style.cssText='top:'+ins[0]+'%;right:'+ins[1]+'%;bottom:'+ins[2]+'%;left:'+ins[3]+'%';
-    if(b.type==='uniflash') tx.style.color='#fff';
+    const ib=el('div','bt-inner');                                       // 실제 글자(중앙정렬 대상)
+    ib.innerHTML=(b.html!==undefined&&b.html!==null)?b.html:escHtml(b.text||'');   // 리치 텍스트(부분 서식 지원)
+    if(b.type==='uniflash') ib.style.color='#fff';
+    const _ff=(b.font!==undefined?b.font:balloonFont); if(_ff) ib.style.fontFamily=_ff;   // 글꼴
+    ib.style.fontSize=(b.fontPx||balloonFontPx)+'px';                                     // 글자 크기
+    if(b.vertical){ ib.style.writingMode='vertical-rl'; ib.style.textOrientation='upright'; }  // 세로쓰기
+    if(b.tox||b.toy) ib.style.transform='translate('+(b.tox||0)+'px,'+(b.toy||0)+'px)';   // 글자 위치(수동 이동)
+    if(b.bold) ib.style.fontWeight='900';            // (구버전 호환) 전체 굵게
+    if(b.italic) ib.style.fontStyle='italic';        // (구버전 호환) 전체 이탤릭
+    if(b.underline) ib.style.textDecoration='underline';  // (구버전 호환) 전체 밑줄
+    tx.appendChild(ib);
     wrap.appendChild(tx);
     if(b===selectedBalloon) wrap.classList.add('selected');
     const frame=el('div','b-frame'); wrap.appendChild(frame);
@@ -967,12 +1066,28 @@ function renderBalloons(){
         wrap.style.transform='rotate('+b.rot+'deg)';};
       const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);};
       document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);};
-    wrap.ondblclick=(e)=>{e.stopPropagation();tx.contentEditable='true';tx.focus();
-      const r=document.createRange();r.selectNodeContents(tx);const s=getSelection();s.removeAllRanges();s.addRange(r);};
-    tx.onblur=()=>{tx.contentEditable='false';b.text=tx.innerText.replace(/\n+$/,'');};
+    wrap.ondblclick=(e)=>{e.stopPropagation();ib.contentEditable='true';ib.focus();
+      const r=document.createRange();r.selectNodeContents(ib);const s=getSelection();s.removeAllRanges();s.addRange(r);};
+    ib.onblur=()=>{ib.contentEditable='false';b.html=ib.innerHTML;b.text=ib.innerText.replace(/\n+$/,'');};
+    ib.onmouseup=ib.onkeyup=()=>{                               // 선택 영역 저장 + 그 글자 크기를 UI에 반영
+      if(!ib.isContentEditable) return;
+      const s=getSelection(); if(!s||!s.rangeCount||!ib.contains(s.anchorNode)) return;
+      savedRange=s.getRangeAt(0).cloneRange(); savedRangeEl=ib;
+      let el=savedRange.startContainer; if(el && el.nodeType===3) el=el.parentElement;
+      if(el){ const fs=Math.round(parseFloat(getComputedStyle(el).fontSize)); if(fs) syncFontSizeUI(fs); }
+    };
     wrap.onpointerdown=(e)=>{
       if(e.target.closest('.b-del,.b-flip,.b-rot,.b-h,.b-tail,.b-tail-base'))return;
-      if(e.target===tx && tx.isContentEditable)return;   // 편집 중엔 이동 안 함
+      if(e.target===ib && ib.isContentEditable)return;   // 편집 중엔 이동 안 함
+      if(e.target===ib && b===selectedBalloon){          // 선택된 말풍선의 글자를 드래그 → 글자 위치 이동
+        e.preventDefault();
+        const sx=e.clientX,sy=e.clientY,ox=b.tox||0,oy=b.toy||0; let th=false;
+        const tmv=(ev)=>{ if(!th){pushHistory();th=true;} b.tox=ox+(ev.clientX-sx); b.toy=oy+(ev.clientY-sy);
+          ib.style.transform='translate('+b.tox+'px,'+b.toy+'px)'; };
+        const tup=()=>{document.removeEventListener('pointermove',tmv);document.removeEventListener('pointerup',tup);};
+        document.addEventListener('pointermove',tmv);document.addEventListener('pointerup',tup);
+        return;
+      }
       e.preventDefault(); selectBalloon(b,wrap);
       const sx=e.clientX,sy=e.clientY,x0=b.x,y0=b.y; let hist=false;
       const mv=(ev)=>{ if(!hist){pushHistory();hist=true;}
@@ -986,18 +1101,54 @@ function renderBalloons(){
 function addBalloonAt(clientX,clientY,type){
   pushHistory();
   const r=stage.getBoundingClientRect(), w=178,h=152;
-  const nb={type,x:clientX-r.left-w/2,y:clientY-r.top-h/2,w,h,text:'',stroke:balloonStroke};
+  const nb={type,x:clientX-r.left-w/2,y:clientY-r.top-h/2,w,h,text:'',stroke:balloonStroke,font:balloonFont,fontPx:balloonFontPx,vertical:balloonVertical,bold:balloonBold,italic:balloonItalic,underline:balloonUnderline};
   state.balloons.push(nb);
   selectedBalloon=nb;              // 새로 놓은 말풍선은 바로 선택 상태
   renderBalloons();
 }
+function addBalloonAtCenter(type){   // 팔레트 더블클릭 → 현재 보이는 화면 중앙에 추가
+  const wrap=document.querySelector('.stage-wrap');
+  const wr=wrap?wrap.getBoundingClientRect():stage.getBoundingClientRect();
+  addBalloonAt(wr.left+wr.width/2, wr.top+wr.height/2, type);
+}
 
 /* ===== 말풍선 선택 ===== */
 function selectBalloon(b,wrap){
+  savedRange=null; savedRangeEl=null;   // 다른 말풍선/새 선택 시 이전 텍스트 선택 초기화
   selectedBalloon=b;
   document.querySelectorAll('.balloon.selected').forEach(w=>{ if(w!==wrap) w.classList.remove('selected'); });
   if(wrap) wrap.classList.add('selected');
   syncStrokeUI(b?(b.stroke||1):balloonStroke);
+  syncFontUI(b);
+  syncVertUI(b);
+}
+/* ===== 말풍선 세로쓰기 ===== */
+function toggleBalloonVertical(){
+  if(selectedBalloon){ pushHistory(); selectedBalloon.vertical=!selectedBalloon.vertical; renderBalloons(); syncVertUI(selectedBalloon); }
+  else { balloonVertical=!balloonVertical; syncVertUI(null); }
+}
+function syncVertUI(b){
+  const v=b?!!b.vertical:balloonVertical;
+  const btn=document.getElementById('vertBtn'); if(btn) btn.classList.toggle('on',v);
+}
+function resetTextPos(){ if(selectedBalloon){ pushHistory(); selectedBalloon.tox=0; selectedBalloon.toy=0; renderBalloons(); } }
+/* ===== 도움말 팝업 ===== */
+function openHelp(){ const m=document.getElementById('helpModal'); if(m) m.classList.add('open'); }
+function closeHelp(){ const m=document.getElementById('helpModal'); if(m) m.classList.remove('open'); }
+/* ===== 글자 스타일 (선택 영역에만 적용: 굵게·이탤릭·밑줄·취소선) ===== */
+function toggleBold(){ styleCmd('bold'); }
+function toggleItalic(){ styleCmd('italic'); }
+function toggleUnderline(){ styleCmd('underline'); }
+function toggleStrike(){ styleCmd('strikeThrough'); }
+function styleCmd(cmd){
+  if(!selectedBalloon) return;
+  const wrap=document.querySelector('.balloon.selected'); if(!wrap) return;
+  const ed=wrap.querySelector('.bt-inner'); if(!ed) return;
+  const wasEditing=ed.isContentEditable;
+  if(!wasEditing){ pushHistory(); ed.contentEditable='true'; ed.focus(); document.execCommand('selectAll',false,null); }  // 편집 중 아니면 전체 적용
+  document.execCommand(cmd,false,null);              // 선택한 글자에만 적용(선택 없으면 이후 입력에 적용)
+  selectedBalloon.html=ed.innerHTML; selectedBalloon.text=ed.innerText;
+  if(!wasEditing){ ed.contentEditable='false'; const s=getSelection(); if(s) s.removeAllRanges(); }
 }
 const STROKE_REF=3.2;   // 배수 ×1.0 기준 외곽선 px
 function syncStrokeUI(mult){
@@ -1017,6 +1168,111 @@ function setBalloonStrokePx(px){ setBalloonStroke((parseFloat(px)||STROKE_REF)/S
 function stepBalloonStrokePx(dpx){   // −/＋ 버튼·키보드용(px 단위)
   const curMult=selectedBalloon?(selectedBalloon.stroke||1):balloonStroke;
   setBalloonStrokePx(curMult*STROKE_REF+dpx);
+}
+
+/* ===== 말풍선 글꼴 · 글자 크기 ===== */
+function setBalloonFont(val){
+  if(selectedBalloon){ pushHistory(); selectedBalloon.font=val; renderBalloons(); }
+  else balloonFont=val;             // 선택 없으면 새 말풍선 기본값
+  syncFontUI(selectedBalloon);
+}
+function applyFontSizeToSel(ed,px){
+  document.execCommand('fontSize',false,'7');                 // 선택을 <font size=7>로 감쌈
+  ed.querySelectorAll('font[size="7"]').forEach(f=>{
+    const span=document.createElement('span'); span.style.fontSize=px+'px';
+    while(f.firstChild) span.appendChild(f.firstChild);
+    f.replaceWith(span);
+  });
+}
+function setBalloonFontPx(px){
+  const v=Math.max(8,Math.min(48,Math.round(parseFloat(px)||14)));
+  if(selectedBalloon && savedRangeEl && savedRangeEl.isConnected && savedRange && !savedRange.collapsed){
+    pushHistory();
+    const wasCE=savedRangeEl.isContentEditable;
+    savedRangeEl.contentEditable='true';
+    const s=getSelection(); s.removeAllRanges(); s.addRange(savedRange); savedRangeEl.focus();
+    applyFontSizeToSel(savedRangeEl,v);                        // 선택한 글자에만 크기 적용
+    selectedBalloon.html=savedRangeEl.innerHTML; selectedBalloon.text=savedRangeEl.innerText;
+    const s2=getSelection(); if(s2&&s2.rangeCount) savedRange=s2.getRangeAt(0).cloneRange();
+    if(!wasCE){ savedRangeEl.contentEditable='false'; }
+  } else if(selectedBalloon){ pushHistory(); selectedBalloon.fontPx=v; renderBalloons(); }  // 선택 없으면 전체
+  else balloonFontPx=v;
+  syncFontSizeUI(v);
+}
+function stepBalloonFontPx(d){
+  const n=document.getElementById('balloonFontPx');
+  const cur=n?(parseFloat(n.value)||14):14;
+  setBalloonFontPx(cur+d);
+}
+function syncFontUI(b){
+  const cur=b?(b.font!==undefined?b.font:balloonFont):balloonFont;
+  const sel=document.getElementById('balloonFontSel');
+  if(sel && document.activeElement!==sel){
+    const has=[...sel.options].some(o=>o.value===cur);
+    sel.value = has ? cur : '';
+  }
+  const tf=document.getElementById('balloonFontText');
+  if(tf && document.activeElement!==tf){
+    tf.value = (cur && cur.indexOf(',')===-1) ? cur.replace(/'/g,'') : '';   // 단일 글꼴(시스템·직접입력)만 표시
+  }
+  const favBtn=document.getElementById('favFontBtn');
+  if(favBtn){ const isFav=!!cur && favFonts.some(f=>f.value===cur); favBtn.textContent=isFav?'★':'☆'; favBtn.style.color=isFav?'#f5b301':''; }
+  syncFontSizeUI(b?(b.fontPx||balloonFontPx):balloonFontPx);
+}
+/* ===== 글꼴 즐겨찾기 (브라우저에 저장) ===== */
+function loadFavFonts(){ try{ favFonts=JSON.parse(localStorage.getItem('webtoon_fav_fonts')||'[]')||[]; }catch(e){ favFonts=[]; } }
+function saveFavFonts(){ try{ localStorage.setItem('webtoon_fav_fonts',JSON.stringify(favFonts)); }catch(e){} }
+function fontValueLabel(){
+  const val=selectedBalloon?(selectedBalloon.font!==undefined?selectedBalloon.font:balloonFont):balloonFont;
+  if(!val) return null;
+  const sel=document.getElementById('balloonFontSel');
+  const opt=sel?[...sel.options].find(o=>o.value===val):null;
+  const label=opt?opt.textContent.replace(/^★\s*/,''):val.replace(/'/g,'').split(',')[0];
+  return {value:val,label:label};
+}
+function toggleFavFont(){
+  const cur=fontValueLabel();
+  if(!cur){ alert('즐겨찾기할 글꼴을 먼저 선택하거나 입력하세요.'); return; }
+  const i=favFonts.findIndex(f=>f.value===cur.value);
+  if(i>-1) favFonts.splice(i,1); else favFonts.push(cur);
+  saveFavFonts(); renderFavGroup(); syncFontUI(selectedBalloon);
+}
+function renderFavGroup(){
+  const sel=document.getElementById('balloonFontSel'); if(!sel) return;
+  const old=document.getElementById('favFontGroup'); if(old) old.remove();
+  if(!favFonts.length) return;
+  const grp=document.createElement('optgroup'); grp.id='favFontGroup'; grp.label='⭐ 즐겨찾기';
+  favFonts.forEach(f=>{ const o=document.createElement('option'); o.value=f.value; o.textContent='★ '+f.label; grp.appendChild(o); });
+  sel.insertBefore(grp, sel.children[1]||null);   // '기본' 다음(맨 위)에 삽입
+}
+/* 직접 입력: 타이핑한 글꼴 이름 적용 */
+function setBalloonFontText(v){
+  const name=(v||'').trim();
+  setBalloonFont(name ? "'"+name.replace(/'/g,"")+"'" : '');
+}
+/* 내 컴퓨터에 설치된 모든 글꼴 불러오기 (Local Font Access API) */
+async function loadSystemFonts(){
+  if(!window.queryLocalFonts){
+    alert('이 브라우저에서는 시스템 글꼴 목록 불러오기를 지원하지 않아요.\n(크롬·엣지 최신 버전에서, 웹 주소(https)나 확장 프로그램으로 열었을 때 지원됩니다.)\n\n대신 아래 "글꼴 이름 직접 입력" 칸에 설치된 글꼴 이름을 적으면 그대로 적용돼요.');
+    return;
+  }
+  try{
+    const fontsArr=await window.queryLocalFonts();
+    const fams=[...new Set(fontsArr.map(f=>f.family))].sort((a,b)=>a.localeCompare(b,'ko'));
+    const sel=document.getElementById('balloonFontSel');
+    const old=document.getElementById('sysFontGroup'); if(old) old.remove();
+    const grp=document.createElement('optgroup'); grp.id='sysFontGroup'; grp.label='내 컴퓨터 글꼴 ('+fams.length+')';
+    fams.forEach(f=>{ const o=document.createElement('option'); o.value="'"+f.replace(/'/g,"")+"'"; o.textContent=f; grp.appendChild(o); });
+    sel.appendChild(grp);
+    alert(fams.length+'개의 글꼴을 불러왔어요. 글꼴 목록 맨 아래 "내 컴퓨터 글꼴"에서 선택하세요.');
+  }catch(e){
+    alert('글꼴을 불러오지 못했어요. 권한을 허용했는지 확인해 주세요.\n('+(e&&e.message?e.message:e)+')');
+  }
+}
+function syncFontSizeUI(px){
+  const n=document.getElementById('balloonFontPx'), r=document.getElementById('balloonFontRange');
+  if(n && document.activeElement!==n) n.value=px;
+  if(r && document.activeElement!==r) r.value=px;
 }
 
 /* ===== 말풍선 크기조절 (8방향 · 회전 반영 · 반대편 고정) ===== */
@@ -1167,22 +1423,44 @@ function drawPreview(box,tip){
 }
 function commitDrawEllipse(box,tipx,tipy){
   cancelDraw(); pushHistory();
-  const nb={type:'draw-ellipse',x:box.x,y:box.y,w:box.w,h:box.h,tail:{fx:(tipx-box.x)/box.w,fy:(tipy-box.y)/box.h},text:'',stroke:balloonStroke};
+  const nb={type:'draw-ellipse',x:box.x,y:box.y,w:box.w,h:box.h,tail:{fx:(tipx-box.x)/box.w,fy:(tipy-box.y)/box.h},text:'',stroke:balloonStroke,font:balloonFont,fontPx:balloonFontPx,vertical:balloonVertical,bold:balloonBold,italic:balloonItalic,underline:balloonUnderline};
   state.balloons.push(nb); selectedBalloon=nb; renderBalloons();
 }
 function cancelDraw(){ const ov=document.getElementById('drawOverlay'); if(ov)ov.remove(); drawState=null; }
 
+/* ===== 말풍선 즐겨찾기 (브라우저에 저장) ===== */
+let favBalloons=[];
+function loadFavBalloons(){ try{ favBalloons=JSON.parse(localStorage.getItem('webtoon_fav_balloons')||'[]')||[]; }catch(e){ favBalloons=[]; } }
+function saveFavBalloons(){ try{ localStorage.setItem('webtoon_fav_balloons',JSON.stringify(favBalloons)); }catch(e){} }
+function isFavBalloon(type){ return favBalloons.indexOf(type)>-1; }
+function toggleFavBalloon(type){ const i=favBalloons.indexOf(type); if(i>-1) favBalloons.splice(i,1); else favBalloons.push(type); saveFavBalloons(); buildPalette(); }
+function palLabel(type){ for(const grp of BALLOON_GROUPS){ const f=grp[1].find(x=>x[0]===type); if(f) return f[1]; } return type; }
+function makePalItem(type,label){
+  const it=el('div','pal-item'); it.draggable=true;
+  it.title=label+' 말풍선 — 컷 위로 드래그하거나 더블클릭해 추가 · ☆로 즐겨찾기';
+  it.innerHTML='<div class="pal-ico">'+balloonSVG(type,true)+'</div><span>'+label+'</span>';
+  it.ondragstart=(e)=>{e.dataTransfer.setData('x-balloon',type);e.dataTransfer.effectAllowed='copy';};
+  it.ondblclick=()=>addBalloonAtCenter(type);
+  const star=el('button','pal-fav'+(isFavBalloon(type)?' on':'')); star.textContent=isFavBalloon(type)?'★':'☆';
+  star.title='즐겨찾기 추가/제거'; star.draggable=false;
+  star.onpointerdown=(e)=>e.stopPropagation();
+  star.ondragstart=(e)=>{e.preventDefault();e.stopPropagation();};
+  star.onclick=(e)=>{e.stopPropagation();toggleFavBalloon(type);};
+  it.appendChild(star);
+  return it;
+}
 function buildPalette(){
   const g=document.getElementById('palGrid'); if(!g)return; g.innerHTML='';
+  if(favBalloons.length){
+    const h=el('div','pal-cat'); h.textContent='⭐ 즐겨찾기'; g.appendChild(h);
+    const row=el('div','pal-row');
+    favBalloons.forEach(type=>row.appendChild(makePalItem(type,palLabel(type))));
+    g.appendChild(row);
+  }
   BALLOON_GROUPS.forEach(([cat,list])=>{
     const h=el('div','pal-cat'); h.textContent=cat; g.appendChild(h);
     const row=el('div','pal-row');
-    list.forEach(([type,label])=>{
-      const it=el('div','pal-item'); it.draggable=true; it.title=label+' 말풍선을 컷 위로 드래그';
-      it.innerHTML='<div class="pal-ico">'+balloonSVG(type,true)+'</div><span>'+label+'</span>';
-      it.ondragstart=(e)=>{e.dataTransfer.setData('x-balloon',type);e.dataTransfer.effectAllowed='copy';};
-      row.appendChild(it);
-    });
+    list.forEach(([type,label])=>row.appendChild(makePalItem(type,label)));
     g.appendChild(row);
   });
 }
@@ -1349,7 +1627,7 @@ function renderLibrary(){
 function saveProject(){
   const proj={ app:'webtoon-editor', v:1, stageW:parseInt(stage.style.width)||690,
     root:state.root, gap:state.gap, border:state.border, balloons:state.balloons,
-    balloonStroke, library:libraryImages, folders:libFolderList };
+    balloonStroke, balloonFont, balloonFontPx, balloonVertical, balloonBold, balloonItalic, balloonUnderline, library:libraryImages, folders:libFolderList };
   const blob=new Blob([JSON.stringify(proj)],{type:'application/json'});
   const url=URL.createObjectURL(blob), a=document.createElement('a');
   const ts=new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
@@ -1367,6 +1645,8 @@ function loadProject(obj){
   if(hasWork && !confirm('현재 작업 내용을 덮어씁니다. 저장한 페이지를 불러올까요?')) return;
   state.root=obj.root; state.gap=obj.gap||0; state.border=obj.border||{w:0,color:'#000000'};
   state.balloons=obj.balloons||[]; balloonStroke=obj.balloonStroke||1;
+  balloonFont=obj.balloonFont||''; balloonFontPx=obj.balloonFontPx||14; balloonVertical=!!obj.balloonVertical;
+  balloonBold=!!obj.balloonBold; balloonItalic=!!obj.balloonItalic; balloonUnderline=!!obj.balloonUnderline;
   if(Array.isArray(obj.library)) libraryImages=obj.library.map(im=>({
     name:im.name, src:im.src, sig:im.sig||(im.name+'|'+(im.src?im.src.length:0)), folder:im.folder||'불러온 이미지' }));
   libFolderList = Array.isArray(obj.folders)? obj.folders.slice() : [];
@@ -1385,11 +1665,12 @@ function loadProject(obj){
 
 /* ===== 키보드 단축키 ===== */
 document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape' && document.getElementById('helpModal').classList.contains('open')){ closeHelp(); return; }
   if(e.key==='Escape' && drawState){         // 그리기 중 Esc: 타원만 그린 상태면 꼬리 없이 완료, 아니면 취소
     e.preventDefault();
     if(drawState.phase==='tail' && drawState.box){
       const b=drawState.box; cancelDraw(); pushHistory();
-      const nb={type:'draw-ellipse',x:b.x,y:b.y,w:b.w,h:b.h,tail:null,text:'',stroke:balloonStroke};
+      const nb={type:'draw-ellipse',x:b.x,y:b.y,w:b.w,h:b.h,tail:null,text:'',stroke:balloonStroke,font:balloonFont,fontPx:balloonFontPx,vertical:balloonVertical,bold:balloonBold,italic:balloonItalic,underline:balloonUnderline};
       state.balloons.push(nb); selectedBalloon=nb; renderBalloons();
     } else cancelDraw();
     return;
@@ -1402,6 +1683,14 @@ document.addEventListener('keydown',(e)=>{
   if(typing) return;
   if(selectedBalloon && (e.key==='+'||e.key==='='||e.key==='-'||e.key==='_')){   // 말풍선 선택 시 +/− = 테두리 굵기
     e.preventDefault(); stepBalloonStrokePx((e.key==='+'||e.key==='=')?0.5:-0.5); return;
+  }
+  if(selectedBalloon && e.key.indexOf('Arrow')===0){   // 화살표 = 글자 위치 미세 이동(Shift=크게)
+    e.preventDefault(); pushHistory(); const st=e.shiftKey?10:2;
+    if(e.key==='ArrowLeft') selectedBalloon.tox=(selectedBalloon.tox||0)-st;
+    else if(e.key==='ArrowRight') selectedBalloon.tox=(selectedBalloon.tox||0)+st;
+    else if(e.key==='ArrowUp') selectedBalloon.toy=(selectedBalloon.toy||0)-st;
+    else if(e.key==='ArrowDown') selectedBalloon.toy=(selectedBalloon.toy||0)+st;
+    renderBalloons(); return;
   }
   if(selectedNode && selectedNode.img && (e.key==='+'||e.key==='='||e.key==='-'||e.key==='_')){
     e.preventDefault(); pushHistory();
@@ -1419,16 +1708,23 @@ document.querySelector('.stage-wrap').addEventListener('pointerdown',(e)=>{
 document.addEventListener('pointerdown',(e)=>{
   if(e.target.closest('.balloon')) return;
   if(e.target.closest('#strokeCtl')) return;   // 굵기 컨트롤(슬라이더·버튼) 조작은 선택 유지
-  if(selectedBalloon){ selectedBalloon=null;
-    document.querySelectorAll('.balloon.selected').forEach(w=>w.classList.remove('selected')); syncStrokeUI(balloonStroke); }
+  if(e.target.closest('#fontCtl')) return;     // 글꼴·글자 크기 컨트롤 조작은 선택 유지
+  if(selectedBalloon){ selectedBalloon=null; savedRange=null; savedRangeEl=null;
+    document.querySelectorAll('.balloon.selected').forEach(w=>w.classList.remove('selected')); syncStrokeUI(balloonStroke); syncFontUI(null); syncVertUI(null); }
 });
 
 /* ===== 초기화 ===== */
+// 서식 버튼 클릭 시 편집 중인 글자 선택이 풀리지 않도록(포커스 유지)
+['boldBtn','italicBtn','underlineBtn','strikeBtn','fontMinusBtn','fontPlusBtn'].forEach(id=>{ const e=document.getElementById(id); if(e) e.addEventListener('pointerdown',ev=>ev.preventDefault()); });
+(function(){ const m=document.getElementById('helpModal'); if(m) m.addEventListener('click',e=>{ if(e.target===m) closeHelp(); }); })();  // 배경 클릭 시 닫기
 render();
+loadFavBalloons();
 buildPalette();
 renderLibrary();
 syncInputs();
 updateUndoUI();
+loadFavFonts();
+renderFavGroup();
 </script>
 </body>
 </html>
